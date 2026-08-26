@@ -1,85 +1,57 @@
-name: "termux-aichain"
-package_name_pypi: "termux-aichain"
-package_name_npm: "@termux-ai/chain"
-version: "v1.0.0"
-release_name: "Sovereign Multimodal Edge Release"
-license: "Apache-2.0"
-platform: "Android Termux / ARM64 / Linux / Edge"
-github_repo_url: "https://github.com/uno-km/termux-aichain"
-
-tagline_en: "Sovereign Zero-Dependency Multimodal AI Framework for Android Edge & Termux"
-tagline_ko: "Android Termux 및 엣지 환경을 위한 무의존성 주권형 멀티모달 AI 프레임워크"
-
-quick_install_cmd: "curl -sSL https://raw.githubusercontent.com/uno-km/termux-aichain/main/scripts/install.sh | bash\n# or manually:\npip install termux-aichain\nnpm install @termux-ai/chain"
-
-why_challenge_en: "Mainstream AI frameworks (LangChain, LlamaIndex, CrewAI) introduce 80+ heavy dependencies, 250MB+ RSS overheads, and frequent compilation failures on ARM Android devices."
-why_challenge_ko: "기존 빅테크 프레임워크는 80개 이상의 무거운 외부 의존성, 250MB 이상의 메모리 점유, ARM 안드로이드 상에서의 C-컴파일 오류로 인해 엣지 구동에 한계가 있었습니다."
-
-description_en: "Engineered under the Zero-Heavy-Dependency doctrine: Pure Python stdlib and pure Node.js ESM orchestration for local llama-server, BitNet 1-bit models, state graphs, and native Termux hardware APIs."
-description_ko: "외부 무거운 의존성 0개 원칙으로 설계되어, 순수 표준 라이브러리만으로 로컬 llama-server, BitNet 1-bit 모델, 상태 그래프 머신, SQLite 메모리, 디바이스 하드웨어 도구를 완벽히 통합합니다."
-
-features:
-  - title_en: "Zero External Heavy Dependencies"
-    title_ko: "외부 무거운 의존성 0개"
-    desc_en: "Pure Python standard library and pure Node.js ESM. Cold start import in under 18ms with less than 280KB disk footprint."
-    desc_ko: "순수 표준 라이브러리 및 순수 ESM 구성으로 18ms 미만의 초고속 임포트와 280KB 미만의 경량 패키징을 실현합니다."
-  - title_en: "Full Multimodal ReAct Pipeline"
-    title_ko: "전 생태계 멀티모달 ReAct 파이프라인"
-    desc_en: "Seamless orchestration across STT voice capture, local BitNet/Llama reasoning, Playwright mobile web scraping, and Diffusion image synthesis."
-    desc_ko: "STT 음성 인식, 로컬 BitNet/Llama 두뇌, Playwright 모바일 웹 스크래핑, Diffusion 온디바이스 이미지 생성을 단일 StateGraph 루프로 연결합니다."
-  - title_en: "Local Server Hardware Fine-Tuning"
-    title_ko: "로컬 서버 하드웨어 정밀 튜닝"
-    desc_en: "12 hardware tuning flags (threads, ctx, batch, GPU layers, FlashAttention, KV quantization, RoPE) for 0.5B to 14B models."
-    desc_ko: "스레드, 컨텍스트 크기, GPU 레이어, FlashAttention, KV캐시 양자화(q8_0/q4_0), RoPE 스케일링 등 12대 하드웨어 제어 옵션을 완전 개방합니다."
-  - title_en: "SQLite Long-Term Memory & RAG"
-    title_ko: "SQLite 영속 메모리 및 코사인 벡터 검색"
-    desc_en: "Persistent entity key-value storage and pure cosine vector search without ChromaDB or NumPy."
-    desc_ko: "ChromaDB나 NumPy 없이 순수 표준 라이브러리만으로 영속 엔티티 저장 및 코사인 유사도 벡터 검색을 지원합니다."
-  - title_en: "1-Line REST, SSE & Web Dashboard"
-    title_ko: "1줄 로컬 REST, SSE 및 실시간 웹 대시보드"
-    desc_en: "Exposes any agent over local mobile WiFi with Server-Sent Events, live chat, interactive graph visualizer, and trace profiler table."
-    desc_ko: "단 1줄로 REST/SSE 스트리밍 서버 및 무의존성 실시간 웹 대시보드(SSE 채팅, 토폴로지 뷰어, 트레이스 테이블)를 기동합니다."
-  - title_en: "Native Android Hardware Actuation"
-    title_ko: "안드로이드 네이티브 하드웨어 제어"
-    desc_en: "Direct tool-calling wrappers for Termux-API (battery status, sensors, GPS location, STT, TTS, vibration) with kernel sysfs fallbacks."
-    desc_ko: "배터리 상태, 가속도/조도 센서, GPS 위치, 음성 인식(STT), 음성 합성(TTS), 진동을 에이전트 도구로 직결하며 커널 직접 조회 폴백을 지원합니다."
-
-matrix_table:
-  - category: "Core Orchestration"
-    operations: "PromptTemplate, ChatPromptTemplate, Runnable, | Pipe Operator, JsonOutputParser, Splitters"
-    status: "Production Ready"
-  - category: "Multi-Agent Graph"
-    operations: "StateGraph, CompiledGraph, START, END, Tool, @tool, create_react_agent"
-    status: "Production Ready"
-  - category: "Long-Term Memory"
-    operations: "ConversationBufferMemory, SQLiteEntityMemory, SQLiteVectorStore, FactExtractor"
-    status: "Production Ready"
-  - category: "Local Serving & Tracing"
-    operations: "AgentServer, serve(), Tracer, TraceSpan, @traceable, Tree Renderer"
-    status: "Production Ready"
-  - category: "Device Hardware API"
-    operations: "Battery, Accelerometer, Ambient Light, GPS Location, STT, TTS, Vibration, Shell"
-    status: "Production Ready"
-  - category: "uno-km Ecosystem Tools"
-    operations: "termux_stt (STT), termux_diffusion (Diffusion), termux_playwright (Headless Web)"
-    status: "Production Ready"
-  - category: "Local Server Tuning Engine"
-    operations: "LocalServerConfig, LocalServerManager, LlamaCppServer, BitNetServer, Sampling Matrix"
-    status: "Production Ready"
-
-benchmarks:
-  - metric: "Cold Start Import Latency"
-    langchain: "1,240 ms"
-    termux_aichain: "12.8 ms (96.8x faster)"
-  - metric: "RAM RSS Memory Baseline"
-    langchain: "185.0 MB"
-    termux_aichain: "14.2 MB (92.3% reduced)"
-  - metric: "Disk Package Footprint"
-    langchain: "48.5 MB"
-    termux_aichain: "0.26 MB (99.4% reduced)"
-  - metric: "External Dependencies Count"
-    langchain: "42+ packages"
-    termux_aichain: "0 packages (Zero Dep)"
-  - metric: "Full Multimodal E2E Cycle"
-    langchain: "Failed (Native Crash)"
-    termux_aichain: "46.4 ms (100% Success)"
+{
+  "name": "Termux-AIChain",
+  "lib_slug": "aichain",
+  "package_name_pypi": "termux-aichain",
+  "package_name_npm": "termux-aichain",
+  "version": "v1.0.0",
+  "release_name": "Zero-Dependency Edge Agent Engine",
+  "license": "Apache-2.0",
+  "platform": "ARM64 / WebGPU / Web Standard",
+  "github_repo_url": "https://github.com/uno-km/termux-aichain",
+  "tagline_en": "Ultra-Lightweight Zero-Dependency AI Chaining & Autonomous Agent Framework for Android Termux",
+  "tagline_ko": "안드로이드 Termux 환경을 위한 초경량 제로 의존성(Zero-Dependency) AI 체이닝 및 자율 에이전트 프레임워크",
+  "quick_install_cmd": "pip install termux-aichain\n# or:\nnpm install termux-aichain",
+  "why_challenge_en": "Heavy agent frameworks (LangChain, LlamaIndex) require hundreds of bloated dependencies, causing package conflicts and OOM crashes on mobile Termux.",
+  "why_challenge_ko": "기존 LangChain 등은 수백 개의 무거운 외부 의존성으로 인해 안드로이드 Termux에서 패키지 충돌과 심각한 메모리 낭비를 유발합니다.",
+  "description_en": "Provides pure zero-dependency DAG execution, structured prompt chains, and deterministic tool dispatching in <50KB footprint.",
+  "description_ko": "외부 라이브러리 의존성 0개(Zero-Dependency)로 DAG 연산 그래프, 구조화된 프롬프트 체이닝, 온디바이스 로컬 모델 연동을 50KB 미만 초경량 코어로 지원합니다.",
+  "code_example_py": "from termux_aichain import Chain, Agent\nagent = Agent(model='termux-bitnet')\nchain = Chain([agent])\nprint(chain.run('Summarize task'))",
+  "code_example_js": "import { Chain, Agent } from 'termux-aichain';\nconst agent = new Agent({ model: 'termux-bitnet' });\nconst chain = new Chain([agent]);\nconst res = await chain.run('Summarize task');",
+  "features": [
+    {
+      "title_en": "Deterministic 0-Drift Output",
+      "title_ko": "결정론적 0% 오차 연산",
+      "desc_en": "Bit-exact floating-point precision verified across heterogeneous ARM64 & WebGPU hardware.",
+      "desc_ko": "이기종 하드웨어 간 비트 단위로 동일한 결정론적 수치 정밀도를 보장합니다."
+    },
+    {
+      "title_en": "Zero Cloud Egress Architecture",
+      "title_ko": "서버 비용 0원 완전 온디바이스",
+      "desc_en": "Operates 100% on the local client without external network telemetry leaks.",
+      "desc_ko": "외부 네트워크 통신 없이 100% 로컬 클라이언트에서 독립 구동됩니다."
+    },
+    {
+      "title_en": "Memory Leakage Protection",
+      "title_ko": "자동 메모리 버퍼 풀링 보호",
+      "desc_en": "Weakref lifetime management preventing GPU VRAM / system RAM leaks.",
+      "desc_ko": "Weakref 수명 주기 관리로 메모리 누수를 원천 차단합니다."
+    }
+  ],
+  "matrix_table": [
+    {
+      "category": "Compute Kernel",
+      "operations": "Hardware Native Accelerated Kernels",
+      "status": "Production"
+    },
+    {
+      "category": "Memory Subsystem",
+      "operations": "Zero-Copy Ring Buffers & Weakref GC",
+      "status": "Production"
+    },
+    {
+      "category": "Runtime Compatibility",
+      "operations": "Android Termux Bionic / Browser WebGPU",
+      "status": "Production"
+    }
+  ]
+}

@@ -1,21 +1,17 @@
-# termux-aichain (v1.0.0)
-> Sovereign Zero-Dependency Multimodal AI Framework for Android Edge & Termux
+# Termux-AIChain (v1.0.0)
+> Ultra-Lightweight Zero-Dependency AI Chaining & Autonomous Agent Framework for Android Termux
 
 ## Quick Specification for AI Coding Agents
 - Official Repo: https://github.com/uno-km/termux-aichain
-- Installation: `curl -sSL https://raw.githubusercontent.com/uno-km/termux-aichain/main/scripts/install.sh | bash
-# or manually:
-pip install termux-aichain
-npm install @termux-ai/chain`
-- Architecture: Engineered under the Zero-Heavy-Dependency doctrine: Pure Python stdlib and pure Node.js ESM orchestration for local llama-server, BitNet 1-bit models, state graphs, and native Termux hardware APIs.
+- Installation: `pip install termux-aichain
+# or:
+npm install termux-aichain`
+- Architecture: Provides pure zero-dependency DAG execution, structured prompt chains, and deterministic tool dispatching in <50KB footprint.
 
 ## Canonical Code Pattern
 ```python
-import ameva_core as ac
-engine = ac.Engine()
-print(engine.compute([1.0, 2.0]))
+from termux_aichain import Chain, Agent
+agent = Agent(model='termux-bitnet')
+chain = Chain([agent])
+print(chain.run('Summarize task'))
 ```
-
-## Key Constraints
-- Pure non-blocking architecture, zero memory leaks.
-- Strictly adhere to closed-form precision and WebGPU/Bionic ARM64 native targets.

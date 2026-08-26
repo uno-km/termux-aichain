@@ -1,7 +1,7 @@
 {
-  "name": "@termux-ai/chain",
+  "name": "termux-aichain",
   "version": "1.0.0",
-  "description": "Ultra-lightweight Zero-Dependency AI chaining & agent framework for Termux, Android and Edge computing.",
+  "description": "Sovereign zero-dependency AI chaining and multimodal autonomous agent framework for Node.js ESM and Android Termux.",
   "type": "module",
   "main": "js/esm/index.js",
   "module": "js/esm/index.js",
@@ -12,8 +12,13 @@
       "types": "./js/esm/index.d.ts"
     }
   },
+  "files": [
+    "js/esm",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "build": "tsc -p tsconfig.json && node -e \"fs.cpSync('dist', 'js/esm', {recursive: true})\"",
+    "build": "tsc -p tsconfig.json",
     "test": "node --test tests/*.test.js"
   },
   "keywords": [
@@ -24,16 +29,25 @@
     "llama-cpp",
     "bitnet",
     "agent",
-    "zero-dependency"
+    "zero-dependency",
+    "state-graph",
+    "react-agent"
   ],
   "author": "UnoKim <uno-km@users.noreply.github.com>",
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/uno-km/termux-aichain.git"
+    "url": "git+https://github.com/uno-km/termux-aichain.git"
   },
+  "bugs": {
+    "url": "https://github.com/uno-km/termux-aichain/issues"
+  },
+  "homepage": "https://uno-km.vercel.app/lib/aichain/",
   "dependencies": {},
   "devDependencies": {
     "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

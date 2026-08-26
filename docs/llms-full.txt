@@ -1,29 +1,13 @@
-# termux-aichain Full Technical Specification (v1.0.0)
+# Termux-AIChain Full Technical Specification (v1.0.0)
 Official Documentation & Deep Architecture Reference for Autonomous AI Agents.
 
 ## 1. System Overview
-Sovereign Zero-Dependency Multimodal AI Framework for Android Edge & Termux
-Engineered under the Zero-Heavy-Dependency doctrine: Pure Python stdlib and pure Node.js ESM orchestration for local llama-server, BitNet 1-bit models, state graphs, and native Termux hardware APIs.
+Ultra-Lightweight Zero-Dependency AI Chaining & Autonomous Agent Framework for Android Termux
+Provides pure zero-dependency DAG execution, structured prompt chains, and deterministic tool dispatching in <50KB footprint.
 
 ## 2. Package & Installation
 - PyPI: termux-aichain
-- Command: curl -sSL https://raw.githubusercontent.com/uno-km/termux-aichain/main/scripts/install.sh | bash
-# or manually:
-pip install termux-aichain
-npm install @termux-ai/chain
+- Command: pip install termux-aichain
+# or:
+npm install termux-aichain
 - Repository: https://github.com/uno-km/termux-aichain
-
-## 3. Core Capabilities
-- **Zero External Heavy Dependencies**: Pure Python standard library and pure Node.js ESM. Cold start import in under 18ms with less than 280KB disk footprint.
-- **Full Multimodal ReAct Pipeline**: Seamless orchestration across STT voice capture, local BitNet/Llama reasoning, Playwright mobile web scraping, and Diffusion image synthesis.
-- **Local Server Hardware Fine-Tuning**: 12 hardware tuning flags (threads, ctx, batch, GPU layers, FlashAttention, KV quantization, RoPE) for 0.5B to 14B models.
-- **SQLite Long-Term Memory & RAG**: Persistent entity key-value storage and pure cosine vector search without ChromaDB or NumPy.
-- **1-Line REST, SSE & Web Dashboard**: Exposes any agent over local mobile WiFi with Server-Sent Events, live chat, interactive graph visualizer, and trace profiler table.
-- **Native Android Hardware Actuation**: Direct tool-calling wrappers for Termux-API (battery status, sensors, GPS location, STT, TTS, vibration) with kernel sysfs fallbacks.
-
-## 4. Canonical Implementation
-```python
-import ameva_core as ac
-engine = ac.Engine()
-print(engine.compute([1.0, 2.0]))
-```
