@@ -58,6 +58,7 @@ from termux_aichain.memory.buffer import ConversationBufferMemory
 from termux_aichain.memory.sqlite import SQLiteEntityMemory, SQLiteVectorStore
 from termux_aichain.memory.extractor import FactExtractor
 from termux_aichain.serve.server import AgentServer, serve
+from termux_aichain.trace.tracer import TraceSpan, Tracer, traceable
 
 __all__ = [
     "__version__",
@@ -98,4 +99,7 @@ __all__ = [
     "FactExtractor",
     "AgentServer",
     "serve",
+    "TraceSpan",
+    "Tracer",
+    "traceable",
 ]

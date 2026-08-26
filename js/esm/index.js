@@ -16,3 +16,4 @@ export * from "./graph/agent.js";
 export * from "./memory/buffer.js";
 export * from "./memory/sqlite.js";
 export * from "./serve/server.js";
+export * from "./trace/tracer.js";
