@@ -24,6 +24,7 @@ import urllib.request
 import urllib.parse
 import ipaddress
 from pathlib import Path
+from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 try:
