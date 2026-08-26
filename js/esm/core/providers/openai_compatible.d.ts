@@ -1,31 +1,50 @@
 /**
  * ==============================================================================
- * @termux-ai/chain OpenAI Compatible Provider (Pure Fetch / SSE)
+ * @termux-ai/chain Core Engine: OpenAI-Compatible & Local LLM Provider (TypeScript ESM)
  * ==============================================================================
  */
 import { BaseChatModel } from "../base.js";
 import { Message, GenerationResult, StreamChunk } from "../schema.js";
-export interface OpenAICompatibleChatConfig {
+export interface ChatModelOptions {
     baseUrl?: string;
     apiKey?: string;
     model?: string;
     temperature?: number;
+    topP?: number;
+    topK?: number;
+    minP?: number;
+    repeatPenalty?: number;
+    presencePenalty?: number;
+    frequencyPenalty?: number;
     maxTokens?: number;
+    stop?: string[];
+    seed?: number;
+    responseFormat?: Record<string, any>;
+    grammar?: string;
+    extraBody?: Record<string, any>;
     timeout?: number;
-    headers?: Record<string, string>;
-    [key: string]: any;
 }
 export declare class OpenAICompatibleChat extends BaseChatModel {
     baseUrl: string;
     apiKey: string;
     model: string;
     temperature: number;
-    maxTokens?: number;
+    topP: number;
+    topK: number;
+    minP: number;
+    repeatPenalty: number;
+    presencePenalty: number;
+    frequencyPenalty: number;
+    maxTokens: number;
+    stop: string[];
+    seed?: number;
+    responseFormat?: Record<string, any>;
+    grammar?: string;
+    extraBody: Record<string, any>;
     timeout: number;
-    customHeaders: Record<string, string>;
-    extraParams: Record<string, any>;
-    constructor(config?: OpenAICompatibleChatConfig);
-    private formatMessages;
-    generate(messages: Message[] | string, options?: Record<string, any>): Promise<GenerationResult>;
-    stream(messages: Message[] | string, options?: Record<string, any>): AsyncIterable<StreamChunk>;
+    constructor(options?: ChatModelOptions);
+    protected buildPayload(messages: Message[], stream?: boolean): Record<string, any>;
+    protected coerceMsgs(input: string | Message[] | Record<string, any>): Message[];
+    generate(messages: Message[]): Promise<GenerationResult>;
+    stream(input: string | Message[] | Record<string, any>): AsyncGenerator<StreamChunk>;
 }

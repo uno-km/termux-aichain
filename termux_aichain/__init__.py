@@ -31,6 +31,12 @@ from termux_aichain.core.base import (
 )
 from termux_aichain.core.providers.openai_compatible import OpenAICompatibleChat
 from termux_aichain.core.providers.bitnet import BitNetChat
+from termux_aichain.core.providers.local_server import (
+    LocalServerConfig,
+    LocalServerManager,
+    LlamaCppServer,
+    BitNetServer,
+)
 from termux_aichain.core.parsers import (
     StringOutputParser,
     JsonOutputParser,
@@ -97,6 +103,10 @@ __all__ = [
     "BaseChatModel",
     "OpenAICompatibleChat",
     "BitNetChat",
+    "LocalServerConfig",
+    "LocalServerManager",
+    "LlamaCppServer",
+    "BitNetServer",
     "StringOutputParser",
     "JsonOutputParser",
     "RegexOutputParser",

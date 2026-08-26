@@ -1,21 +1,30 @@
-﻿/**
+/**
  * ==============================================================================
- * @termux-ai/chain OpenAI Compatible Provider (Pure Fetch / SSE)
+ * @termux-ai/chain Core Engine: OpenAI-Compatible & Local LLM Provider (TypeScript ESM)
  * ==============================================================================
  */
 
 import { BaseChatModel } from "../base.js";
-import { Message, AIMessage, GenerationResult, StreamChunk, UsageInfo } from "../schema.js";
+import { Message, HumanMessage, AIMessage, GenerationResult, StreamChunk, UsageInfo } from "../schema.js";
 
-export interface OpenAICompatibleChatConfig {
+export interface ChatModelOptions {
   baseUrl?: string;
   apiKey?: string;
   model?: string;
   temperature?: number;
+  topP?: number;
+  topK?: number;
+  minP?: number;
+  repeatPenalty?: number;
+  presencePenalty?: number;
+  frequencyPenalty?: number;
   maxTokens?: number;
+  stop?: string[];
+  seed?: number;
+  responseFormat?: Record<string, any>;
+  grammar?: string;
+  extraBody?: Record<string, any>;
   timeout?: number;
-  headers?: Record<string, string>;
-  [key: string]: any;
 }
 
 export class OpenAICompatibleChat extends BaseChatModel {
@@ -23,166 +32,162 @@ export class OpenAICompatibleChat extends BaseChatModel {
   apiKey: string;
   model: string;
   temperature: number;
-  maxTokens?: number;
+  topP: number;
+  topK: number;
+  minP: number;
+  repeatPenalty: number;
+  presencePenalty: number;
+  frequencyPenalty: number;
+  maxTokens: number;
+  stop: string[];
+  seed?: number;
+  responseFormat?: Record<string, any>;
+  grammar?: string;
+  extraBody: Record<string, any>;
   timeout: number;
-  customHeaders: Record<string, string>;
-  extraParams: Record<string, any>;
 
-  constructor(config: OpenAICompatibleChatConfig = {}) {
+  constructor(options: ChatModelOptions = {}) {
     super();
-    this.baseUrl = (config.baseUrl ?? "http://127.0.0.1:8080/v1").replace(/\/+$/, "");
-    this.apiKey = config.apiKey ?? "no-key";
-    this.model = config.model ?? "default";
-    this.temperature = config.temperature ?? 0.7;
-    this.maxTokens = config.maxTokens;
-    this.timeout = config.timeout ?? 60000;
-    this.customHeaders = {
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-      "Authorization": `Bearer ${this.apiKey}`,
-      ...(config.headers ?? {})
-    };
-    const { baseUrl, apiKey, model, temperature, maxTokens, timeout, headers, ...rest } = config;
-    this.extraParams = rest;
+    this.baseUrl = (options.baseUrl || "http://127.0.0.1:8080/v1").replace(/\/$/, "");
+    this.apiKey = options.apiKey || "sk-termux-sovereign";
+    this.model = options.model || "local-model";
+    this.temperature = options.temperature ?? 0.7;
+    this.topP = options.topP ?? 0.95;
+    this.topK = options.topK ?? 40;
+    this.minP = options.minP ?? 0.05;
+    this.repeatPenalty = options.repeatPenalty ?? 1.1;
+    this.presencePenalty = options.presencePenalty ?? 0.0;
+    this.frequencyPenalty = options.frequencyPenalty ?? 0.0;
+    this.maxTokens = options.maxTokens ?? 512;
+    this.stop = options.stop || [];
+    this.seed = options.seed;
+    this.responseFormat = options.responseFormat;
+    this.grammar = options.grammar;
+    this.extraBody = options.extraBody || {};
+    this.timeout = options.timeout ?? 60000;
   }
 
-  private formatMessages(messages: Message[] | string): Array<{ role: string; content: string }> {
-    if (typeof messages === "string") {
-      return [{ role: "user", content: messages }];
+  protected buildPayload(messages: Message[], stream: boolean = false): Record<string, any> {
+    const payload: Record<string, any> = {
+      model: this.model,
+      messages: messages.map((m) => ({ role: m.role, content: m.content })),
+      stream,
+      temperature: this.temperature,
+      top_p: this.topP,
+      max_tokens: this.maxTokens,
+    };
+    if (this.topK > 0) payload.top_k = this.topK;
+    if (this.minP > 0) payload.min_p = this.minP;
+    if (this.repeatPenalty !== 1.0) payload.repeat_penalty = this.repeatPenalty;
+    if (this.presencePenalty !== 0.0) payload.presence_penalty = this.presencePenalty;
+    if (this.frequencyPenalty !== 0.0) payload.frequency_penalty = this.frequencyPenalty;
+    if (this.stop.length > 0) payload.stop = this.stop;
+    if (this.seed !== undefined) payload.seed = this.seed;
+    if (this.responseFormat) payload.response_format = this.responseFormat;
+    if (this.grammar) payload.grammar = this.grammar;
+
+    for (const [k, v] of Object.entries(this.extraBody)) {
+      payload[k] = v;
     }
-    return messages.map(m => ({
-      role: m.role,
-      content: m.content,
-      ...(m.name ? { name: m.name } : {}),
-      ...(m.tool_calls ? { tool_calls: m.tool_calls } : {})
-    }));
+    return payload;
   }
 
-  async generate(messages: Message[] | string, options: Record<string, any> = {}): Promise<GenerationResult> {
-    const payload: any = {
-      model: options.model ?? this.model,
-      messages: this.formatMessages(messages),
-      temperature: options.temperature ?? this.temperature,
-      stream: false,
-      ...this.extraParams,
-      ...options
-    };
-    if (this.maxTokens !== undefined && !payload.max_tokens) {
-      payload.max_tokens = this.maxTokens;
-    }
-
-    const tStart = performance.now();
-    const response = await fetch(`${this.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: this.customHeaders,
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(this.timeout)
-    });
-
-    if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`OpenAICompatibleChat HTTPError ${response.status}: ${errText}`);
-    }
-
-    const data = await response.json();
-    const elapsedMs = performance.now() - tStart;
-    const choice = data.choices?.[0];
-    if (!choice) {
-      throw new Error(`No choices returned from model endpoint: ${JSON.stringify(data)}`);
-    }
-
-    const content = choice.message?.content ?? "";
-    const toolCalls = choice.message?.tool_calls;
-    const usage: UsageInfo = {
-      prompt_tokens: data.usage?.prompt_tokens ?? 0,
-      completion_tokens: data.usage?.completion_tokens ?? 0,
-      total_tokens: data.usage?.total_tokens ?? 0,
-      latency_ms: Math.round(elapsedMs * 100) / 100
-    };
-
-    return {
-      content,
-      message: new AIMessage(content, { tool_calls: toolCalls }),
-      usage,
-      raw: data
-    };
+  protected coerceMsgs(input: string | Message[] | Record<string, any>): Message[] {
+    if (typeof input === "string") return [new HumanMessage(input)];
+    if (Array.isArray(input)) return input;
+    if (input && typeof input === "object" && "messages" in input) return input.messages;
+    return [new HumanMessage(JSON.stringify(input))];
   }
 
-  async *stream(messages: Message[] | string, options: Record<string, any> = {}): AsyncIterable<StreamChunk> {
-    const payload: any = {
-      model: options.model ?? this.model,
-      messages: this.formatMessages(messages),
-      temperature: options.temperature ?? this.temperature,
-      stream: true,
-      ...this.extraParams,
-      ...options
-    };
-    if (this.maxTokens !== undefined && !payload.max_tokens) {
-      payload.max_tokens = this.maxTokens;
-    }
+  async generate(messages: Message[]): Promise<GenerationResult> {
+    const url = `${this.baseUrl}/chat/completions`;
+    const payload = this.buildPayload(messages, false);
+    const t0 = performance.now();
 
-    const tStart = performance.now();
-    const response = await fetch(`${this.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: this.customHeaders,
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(this.timeout)
-    });
-
-    if (!response.ok || !response.body) {
-      const errText = await response.text();
-      throw new Error(`OpenAICompatibleChat Stream HTTPError ${response.status}: ${errText}`);
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder("utf-8");
-    let accumulatedContent = "";
-    let buffer = "";
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), this.timeout);
 
     try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.apiKey}`,
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal,
+      });
 
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith("data:")) continue;
-          const dataStr = trimmed.slice(5).trim();
-          if (dataStr === "[DONE]") {
-            const elapsedMs = performance.now() - tStart;
-            yield {
-              content: accumulatedContent,
-              delta: "",
-              is_last: true,
-              usage: {
-                prompt_tokens: 0,
-                completion_tokens: 0,
-                total_tokens: 0,
-                latency_ms: Math.round(elapsedMs * 100) / 100
-              }
-            };
-            return;
-          }
-          try {
-            const parsed = JSON.parse(dataStr);
-            const delta = parsed.choices?.[0]?.delta?.content ?? "";
-            if (delta) {
-              accumulatedContent += delta;
-              yield {
-                content: accumulatedContent,
-                delta,
-                is_last: false,
-                raw: parsed
-              };
-            }
-          } catch {}
-        }
+      if (!resp.ok) {
+        const errText = await resp.text();
+        throw new Error(`HTTP ${resp.status} from local LLM: ${errText}`);
       }
+
+      const data = (await resp.json()) as any;
+      const content = data?.choices?.[0]?.message?.content || "";
+      const rawUsage = data?.usage || {};
+      const usage: UsageInfo = {
+        prompt_tokens: rawUsage.prompt_tokens || 0,
+        completion_tokens: rawUsage.completion_tokens || 0,
+        total_tokens: rawUsage.total_tokens || 0,
+        latency_ms: performance.now() - t0,
+      };
+
+      return {
+        message: new AIMessage(content),
+        content,
+        usage,
+        raw: data
+      };
     } finally {
-      reader.releaseLock();
+      clearTimeout(timer);
+    }
+  }
+
+  async *stream(input: string | Message[] | Record<string, any>): AsyncGenerator<StreamChunk> {
+    const messages = this.coerceMsgs(input);
+    const url = `${this.baseUrl}/chat/completions`;
+    const payload = this.buildPayload(messages, true);
+
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!resp.ok || !resp.body) {
+      throw new Error(`Streaming failed: HTTP ${resp.status}`);
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let accumulated = "";
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value);
+      const lines = chunk.split("\n");
+
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const dataStr = line.slice(6).trim();
+        if (dataStr === "[DONE]") {
+          yield { delta: "", content: accumulated, is_last: true };
+          return;
+        }
+        try {
+          const parsed = JSON.parse(dataStr);
+          const delta = parsed?.choices?.[0]?.delta?.content || "";
+          if (delta) {
+            accumulated += delta;
+            yield { delta, content: accumulated, is_last: false };
+          }
+        } catch (e) {}
+      }
     }
   }
 }
