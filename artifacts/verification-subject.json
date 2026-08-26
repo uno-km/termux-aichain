@@ -1,17 +1,20 @@
 {
-  "source_commit_tested": "2ae3afb5bbc60acaca9218a2e2cffce8c05abb6e",
-  "source_tree_tested": "8072aee485918fd65002bf2c1d95bcdcd0f3b472",
-  "working_tree_clean": false,
+  "source_commit_tested": "c403369aba7fcc6a9be7a3357e3cae9889d52ebc",
+  "source_tree_tested": "98932ee7d778b0f3cbafc7f98acc75972041f5e8",
+  "working_tree_clean_at_test": true,
+  "js_esm_zero_drift": true,
   "python_version": "3.12.0",
   "python_total_tests": 136,
   "python_passed_tests": 136,
-  "python_duration_sec": 10.6,
+  "python_duration_sec": 11.29,
   "python_exit_code": 0,
   "node_total_tests": 17,
   "node_passed_tests": 17,
-  "node_duration_ms": 534.22,
+  "node_duration_ms": 503.25,
   "node_exit_code": 0,
   "total_passed_tests": 153,
+  "total_verified_scope_tests": 153,
+  "observed_failures": 0,
   "os_platform": "Windows-10-10.0.19045-SP0",
-  "timestamp_utc": "2026-08-26T16:05:53Z"
+  "timestamp_utc": "2026-08-26T16:10:00Z"
 }

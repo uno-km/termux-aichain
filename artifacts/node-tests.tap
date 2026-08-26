@@ -2,24 +2,24 @@
 > termux-aichain@1.0.12-rc.1 test
 > node --test tests/*.test.js
 
-✔ Node.js: PromptTemplate basic substitution (3.7663ms)
-✔ Node.js: ChatPromptTemplate formatting (0.9367ms)
-✔ Node.js: JsonOutputParser markdown extraction (1.1346ms)
-✔ Node.js: RecursiveCharacterTextSplitter (6.8013ms)
-✔ Node.js: Device tools default suite (39.4801ms)
-✔ Node.js: LocalAgent default constructor & run facade (3.3601ms)
-✔ Node.js: LocalAgent.connect and LocalAgent.local factories with identityVerifier DI (1.1909ms)
-✔ Node.js: verifyServerIdentity contract validation & fail-closed fallback (65.1105ms)
-✔ Node.js: verifyServerIdentity fail-closed on missing model ID without fallback (13.9306ms)
-✔ Node.js: StateGraph linear execution (2.788ms)
-✔ Node.js: StateGraph cyclic loop (0.6252ms)
-✔ Node.js: createReactAgent tool schema validation & default deny (10.6034ms)
-✔ Node.js: createReactAgent unconfigured policy strictly denies all tools (Default Deny) (1.2565ms)
-✔ Node.js: ConversationBufferMemory window (3.8861ms)
-✔ Node.js: MicroVectorStore cosine search (1.4357ms)
+✔ Node.js: PromptTemplate basic substitution (3.4296ms)
+✔ Node.js: ChatPromptTemplate formatting (0.7281ms)
+✔ Node.js: JsonOutputParser markdown extraction (1.5267ms)
+✔ Node.js: RecursiveCharacterTextSplitter (1.1188ms)
+✔ Node.js: Device tools default suite (26.2033ms)
+✔ Node.js: LocalAgent default constructor & run facade (3.5318ms)
+✔ Node.js: LocalAgent.connect and LocalAgent.local factories with identityVerifier DI (1.1525ms)
+✔ Node.js: verifyServerIdentity contract validation & fail-closed fallback (65.3907ms)
+✔ Node.js: verifyServerIdentity fail-closed on missing model ID without fallback (21.8257ms)
+✔ Node.js: StateGraph linear execution (4.0274ms)
+✔ Node.js: StateGraph cyclic loop (0.5583ms)
+✔ Node.js: createReactAgent tool schema validation & default deny (9.3016ms)
+✔ Node.js: createReactAgent unconfigured policy strictly denies all tools (Default Deny) (3.749ms)
+✔ Node.js: ConversationBufferMemory window (2.0458ms)
+✔ Node.js: MicroVectorStore cosine search (0.8597ms)
 [*] @termux-ai/chain serving agent on http://127.0.0.1:0
-✔ Node.js: 1-Line serve HTTP invoke & security (76.6653ms)
-✔ Node.js: Tracer hierarchical tree and metrics (4.607ms)
+✔ Node.js: 1-Line serve HTTP invoke & security (96.4847ms)
+✔ Node.js: Tracer hierarchical tree and metrics (4.1905ms)
 ℹ tests 17
 ℹ suites 0
 ℹ pass 17
@@ -27,4 +27,4 @@
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 534.2156
+ℹ duration_ms 503.2481
