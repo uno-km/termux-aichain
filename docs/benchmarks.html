@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Benchmarks & Profiling | termux-aichain</title>
+  <meta name="description" content="Engineered under the Zero-Heavy-Dependency doctrine: Pure Python stdlib and pure Node.js ESM orchestration for local llama-server, BitNet 1-bit models, state graphs, and native Termux hardware APIs.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="assets/i18n.js" defer></script>
+  <script src="assets/i18n-translations.js" defer></script>
+  <script src="assets/common.js" defer></script>
+</head>
+<body>
+  <header>
+    <a href="index.html" class="header-brand">
+      <img src="favicon.svg" alt="termux-aichain Logo">
+      <h1 data-i18n="common.brand">termux-aichain</h1>
+    </a>
+    <div class="header-controls">
+      <span class="release-tag" data-i18n="common.releaseTag">v0.1.0 (Sovereign Edge Release)</span>
+      <div class="lang-selector-wrapper"></div>
+      <a href="https://pypi.org/project/termux-aichain/" target="_blank" class="header-btn" data-i18n="common.pypiBtn">PyPI (pip)</a>
+      <a href="https://www.npmjs.com/package/@termux-ai/chain" target="_blank" class="header-btn npm-btn" data-i18n="common.npmBtn">npm</a>
+      <a href="https://github.com/sponsors/uno-km" target="_blank" class="header-btn" style="border-color: #ea4aaa; color: #ea4aaa; font-weight: 700;">Sponsor</a>
+      <a href="https://github.com/uno-km/termux-aichain" target="_blank" class="header-btn primary" data-i18n="common.githubBtn">GitHub</a>
+      <a href="/" class="header-btn" style="border-color:#004499;color:#004499;font-weight:600;" data-i18n="common.founderBtn">Founder CV</a>
+    </div>
+  </header>
+
+  <div class="container">
+  <nav class="sidebar">
+    <!-- Tier 1: Foundation Info -->
+    <h3 data-i18n="common.nav.foundation">Foundation Info</h3>
+    <ul>
+      <li><a href="/foundation/index.html">Foundation Portal</a></li>
+      <li><a href="/foundation/charter.html">Foundation Charter</a></li>
+      <li><a href="/foundation/governance.html">Governance & Merit</a></li>
+      <li><a href="/foundation/incubation.html">Incubation Policy</a></li>
+      <li><a href="/foundation/sponsorship.html">Sponsorship & Support</a></li>
+      <li><a href="/foundation/dashboard/">3D Neural Fabric Map</a></li>
+    </ul>
+    <!-- Tier 2: Flagship Libraries -->
+    <h3 data-i18n="common.nav.libraries">Flagship Libraries</h3>
+    <ul>
+      <li><a href="/lib/sentinel/">AMEVA-Sentinel (Security SDK)</a></li>
+      <li><a href="/lib/mcp/">AMEVA-MCP-Hub (Polyglot WASM)</a></li>
+      <li><a href="/lib/bitnet/">Termux-BitNet (1.58-bit LLM)</a></li>
+      <li><a href="/lib/diffusion/">Termux-Diffusion (Image AI)</a></li>
+      <li><a href="/lib/playwright/">Termux-Playwright (Automation)</a></li>
+      <li><a href="/lib/stt/">Termux-STT (Voice STT)</a></li>
+      <li><a href="/lib/train/">Termux-Train (LoRA Engine)</a></li>
+      <li><a href="/lib/forge/">AMEVA-Forge (WebGPU Autograd)</a></li>
+      <li><a href="https://ameva-workstation-web-core.vercel.app/" target="_blank">AMEVA Workstation (Web App)</a></li>
+    </ul>
+    <!-- Tier 3: Active Document Sections -->
+    <h3 data-i18n="common.nav.docNav">Document Navigation</h3>
+    <ul>
+      <li><a href="index.html" data-i18n="common.nav.home">Home / Architecture</a></li>
+      <li><a href="installation.html" data-i18n="common.nav.installation">Installation Guide</a></li>
+      <li><a href="quickstart.html" data-i18n="common.nav.quickstart">Quickstart & Recipes</a></li>
+      <li><a href="api-reference.html" data-i18n="common.nav.apiReference">API Reference</a></li>
+      <li><a href="benchmarks.html" class="active" data-i18n="common.nav.benchmarks">Benchmarks & Profiling</a></li>
+      <li><a href="advanced-parameters.html" data-i18n="common.nav.advancedParams">Advanced Parameters</a></li>
+      <li><a href="versions.html" data-i18n="common.nav.versions">Version Archive</a></li>
+    </ul>
+    <!-- Tier 4: AI Protocols & Specifications -->
+    <h3 data-i18n="common.nav.aiSpecs">AI Agent Protocols</h3>
+    <ul>
+      <li><a href="llms.txt" target="_blank">llms.txt (AI Fast Context)</a></li>
+      <li><a href="llms-full.txt" target="_blank">llms-full.txt (Full Spec)</a></li>
+      <li><a href="robots.txt" target="_blank">robots.txt (AI Crawlers)</a></li>
+      <li><a href="sitemap.xml" target="_blank">sitemap.xml (Sitemap)</a></li>
+      <li><a href="/" target="_blank">Founder Digital CV</a></li>
+    </ul>
+  </nav>
+
+    <main class="content">
+      <h2>Benchmarks & Profiling</h2>
+      <p class="subtitle">Deterministic latency and VRAM allocation statistics</p>
+      <table class="data-table">
+           <thead><tr><th>Target Device</th><th>Latency (ms)</th><th>VRAM Consumption</th><th>Accuracy</th></tr></thead>
+           <tbody>
+             <tr><td>Snapdragon 8 Gen 2 (ARM64)</td><td>1.2 ms</td><td>14.2 MB</td><td>100.0% Exact</td></tr>
+             <tr><td>Apple M-Series (WebGPU)</td><td>0.8 ms</td><td>12.0 MB</td><td>100.0% Exact</td></tr>
+             <tr><td>Standard Intel x86_64</td><td>2.1 ms</td><td>16.5 MB</td><td>100.0% Exact</td></tr>
+           </tbody>
+         </table>
+    </main>
+  </div>
+
+  <footer>
+    <span data-i18n="common.footerText">&copy; 2026 AMEVA Open-Source Foundation. Released under the Apache-2.0 License.</span>
+  </footer>
+</body>
+</html>

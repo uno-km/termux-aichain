@@ -10,6 +10,7 @@ export * from "./core/schema.js";
 export * from "./core/prompt.js";
 export * from "./core/base.js";
 export * from "./core/providers/openai_compatible.js";
+export * from "./core/providers/bitnet.js";
 export * from "./core/parsers.js";
 export * from "./core/splitters.js";
 

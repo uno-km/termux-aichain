@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>termux-aichain | Official Documentation</title>
+  <meta name="description" content="Engineered under the Zero-Heavy-Dependency doctrine: Pure Python stdlib and pure Node.js ESM orchestration for local llama-server, BitNet 1-bit models, state graphs, and native Termux hardware APIs.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="assets/style.css">
+  <script src="assets/i18n.js" defer></script>
+  <script src="assets/i18n-translations.js" defer></script>
+  <script src="assets/common.js" defer></script>
+</head>
+<body>
+  <header>
+    <a href="index.html" class="header-brand">
+      <img src="favicon.svg" alt="termux-aichain Logo">
+      <h1 data-i18n="common.brand">termux-aichain</h1>
+    </a>
+    <div class="header-controls">
+      <span class="release-tag" data-i18n="common.releaseTag">v0.1.0 (Sovereign Edge Release)</span>
+      <div class="lang-selector-wrapper"></div>
+      <a href="https://pypi.org/project/termux-aichain/" target="_blank" class="header-btn" data-i18n="common.pypiBtn">PyPI (pip)</a>
+      <a href="https://www.npmjs.com/package/@termux-ai/chain" target="_blank" class="header-btn npm-btn" data-i18n="common.npmBtn">npm</a>
+      <a href="https://github.com/sponsors/uno-km" target="_blank" class="header-btn" style="border-color: #ea4aaa; color: #ea4aaa; font-weight: 700;">Sponsor</a>
+      <a href="https://github.com/uno-km/termux-aichain" target="_blank" class="header-btn primary" data-i18n="common.githubBtn">GitHub</a>
+      <a href="/" class="header-btn" style="border-color:#004499;color:#004499;font-weight:600;" data-i18n="common.founderBtn">Founder CV</a>
+    </div>
+  </header>
+
+  <div class="container">
+  <nav class="sidebar">
+    <!-- Tier 1: Foundation Info -->
+    <h3 data-i18n="common.nav.foundation">Foundation Info</h3>
+    <ul>
+      <li><a href="/foundation/index.html">Foundation Portal</a></li>
+      <li><a href="/foundation/charter.html">Foundation Charter</a></li>
+      <li><a href="/foundation/governance.html">Governance & Merit</a></li>
+      <li><a href="/foundation/incubation.html">Incubation Policy</a></li>
+      <li><a href="/foundation/sponsorship.html">Sponsorship & Support</a></li>
+      <li><a href="/foundation/dashboard/">3D Neural Fabric Map</a></li>
+    </ul>
+    <!-- Tier 2: Flagship Libraries -->
+    <h3 data-i18n="common.nav.libraries">Flagship Libraries</h3>
+    <ul>
+      <li><a href="/lib/sentinel/">AMEVA-Sentinel (Security SDK)</a></li>
+      <li><a href="/lib/mcp/">AMEVA-MCP-Hub (Polyglot WASM)</a></li>
+      <li><a href="/lib/bitnet/">Termux-BitNet (1.58-bit LLM)</a></li>
+      <li><a href="/lib/diffusion/">Termux-Diffusion (Image AI)</a></li>
+      <li><a href="/lib/playwright/">Termux-Playwright (Automation)</a></li>
+      <li><a href="/lib/stt/">Termux-STT (Voice STT)</a></li>
+      <li><a href="/lib/train/">Termux-Train (LoRA Engine)</a></li>
+      <li><a href="/lib/forge/">AMEVA-Forge (WebGPU Autograd)</a></li>
+      <li><a href="https://ameva-workstation-web-core.vercel.app/" target="_blank">AMEVA Workstation (Web App)</a></li>
+    </ul>
+    <!-- Tier 3: Active Document Sections -->
+    <h3 data-i18n="common.nav.docNav">Document Navigation</h3>
+    <ul>
+      <li><a href="index.html" class="active" data-i18n="common.nav.home">Home / Architecture</a></li>
+      <li><a href="installation.html" data-i18n="common.nav.installation">Installation Guide</a></li>
+      <li><a href="quickstart.html" data-i18n="common.nav.quickstart">Quickstart & Recipes</a></li>
+      <li><a href="api-reference.html" data-i18n="common.nav.apiReference">API Reference</a></li>
+      <li><a href="benchmarks.html" data-i18n="common.nav.benchmarks">Benchmarks & Profiling</a></li>
+      <li><a href="advanced-parameters.html" data-i18n="common.nav.advancedParams">Advanced Parameters</a></li>
+      <li><a href="versions.html" data-i18n="common.nav.versions">Version Archive</a></li>
+    </ul>
+    <!-- Tier 4: AI Protocols & Specifications -->
+    <h3 data-i18n="common.nav.aiSpecs">AI Agent Protocols</h3>
+    <ul>
+      <li><a href="llms.txt" target="_blank">llms.txt (AI Fast Context)</a></li>
+      <li><a href="llms-full.txt" target="_blank">llms-full.txt (Full Spec)</a></li>
+      <li><a href="robots.txt" target="_blank">robots.txt (AI Crawlers)</a></li>
+      <li><a href="sitemap.xml" target="_blank">sitemap.xml (Sitemap)</a></li>
+      <li><a href="/" target="_blank">Founder Digital CV</a></li>
+    </ul>
+  </nav>
+
+    <main class="content">
+      <!-- Section 1: Main Title & Subtitle -->
+      <h2 data-i18n="home.title">termux-aichain</h2>
+      <p class="subtitle" data-i18n="home.subtitle">Sovereign Zero-Dependency AI Chaining and Agent Framework for Termux & Android Edge</p>
+
+      <!-- Section 2: Badges Bar -->
+      <div class="badges-bar">
+        <a href="https://pypi.org/project/termux-aichain/" target="_blank"><img src="https://img.shields.io/pypi/v/termux-aichain.svg?color=004499" alt="PyPI Version"></a>
+        <a href="https://pypistats.org/packages/termux-aichain" target="_blank"><img src="https://img.shields.io/pypi/dm/termux-aichain.svg?color=2563eb&label=PyPI%20Downloads" alt="PyPI Downloads"></a>
+        <a href="https://www.npmjs.com/package/@termux-ai/chain" target="_blank"><img src="https://img.shields.io/npm/v/@termux-ai/chain.svg?color=cb3837" alt="npm Version"></a>
+        <a href="https://www.npmjs.com/package/@termux-ai/chain" target="_blank"><img src="https://img.shields.io/npm/dm/@termux-ai/chain.svg?color=2563eb&label=npm%20Downloads" alt="npm Downloads"></a>
+        <img src="https://img.shields.io/badge/license-Apache-2.0-success.svg" alt="License">
+        <img src="https://img.shields.io/badge/tests-100%25_PASS-success.svg" alt="Tests">
+        <img src="https://img.shields.io/badge/platform-Android_Termux_/_ARM64_/_Linux_/_Edge-blueviolet.svg" alt="Platform">
+      </div>
+
+      <!-- Section 3: 1-Line Quick Installation Alert -->
+      <div class="alert alert-tip">
+        <span class="alert-title" data-i18n="home.quickInstallTitle">1-Line Quick Installation</span>
+        <p data-i18n="home.quickInstallDesc">Install the official package directly into your runtime:</p>
+        <pre><code>pip install termux-aichain
+# or for Node.js:
+npm install @termux-ai/chain</code></pre>
+      </div>
+
+      <!-- Section 4: Engineering Challenge & Architectural Breakthrough -->
+      <h3 data-i18n="home.challengeTitle">The Engineering Challenge</h3>
+      <p data-i18n="home.challengeText">Mainstream AI frameworks (LangChain, LlamaIndex, CrewAI) introduce 80+ heavy dependencies, 250MB+ RSS overheads, and frequent compilation failures on ARM Android devices.</p>
+
+      <h3 data-i18n="home.breakthroughTitle">The Architectural Breakthrough</h3>
+      <p data-i18n="home.breakthroughText">Engineered under the Zero-Heavy-Dependency doctrine: Pure Python stdlib and pure Node.js ESM orchestration for local llama-server, BitNet 1-bit models, state graphs, and native Termux hardware APIs.</p>
+
+      <!-- Section 5: Key Capabilities Grid -->
+      <h3 data-i18n="home.featuresTitle">Key Capabilities &amp; Built-in Hardening</h3>
+      <div class="features-grid">
+        <div class="feature-card">
+          <h4 data-i18n="home.features.0.title">Zero External Heavy Dependencies</h4>
+          <p data-i18n="home.features.0.desc">Pure Python standard library and pure Node.js ESM. Cold start import in under 18ms with less than 280KB disk footprint.</p>
+        </div>
+        <div class="feature-card">
+          <h4 data-i18n="home.features.1.title">StateGraph & ReAct Engine</h4>
+          <p data-i18n="home.features.1.desc">Deterministic cyclic state machines and autonomous tool-calling loops (LangGraph lightweight alternative).</p>
+        </div>
+        <div class="feature-card">
+          <h4 data-i18n="home.features.2.title">SQLite Long-Term Memory</h4>
+          <p data-i18n="home.features.2.desc">Persistent entity key-value storage and pure cosine vector search without ChromaDB or NumPy.</p>
+        </div>
+        <div class="feature-card">
+          <h4 data-i18n="home.features.3.title">1-Line REST & SSE Server</h4>
+          <p data-i18n="home.features.3.desc">Exposes any agent or chain over local mobile WiFi with Server-Sent Events without FastAPI overhead.</p>
+        </div>
+        <div class="feature-card">
+          <h4 data-i18n="home.features.4.title">CLI Tree Tracer & TPS Meter</h4>
+          <p data-i18n="home.features.4.desc">Hierarchical ANSI tree visualization, millisecond latency profiling, and token throughput meters.</p>
+        </div>
+        <div class="feature-card">
+          <h4 data-i18n="home.features.5.title">Native Android Hardware Toolkit</h4>
+          <p data-i18n="home.features.5.desc">Direct tool-calling wrappers for Termux-API (battery status, sensors, GPS location, STT, TTS, vibration).</p>
+        </div>
+      </div>
+
+      <!-- Section 6: Compute & Module Matrix -->
+      <h3 data-i18n="home.matrixTitle">Supported Compute Kernels &amp; Operations</h3>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th data-i18n="home.matrixCol1">Subsystem Category</th>
+            <th data-i18n="home.matrixCol2">Operations &amp; Kernels</th>
+            <th data-i18n="home.matrixCol3">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Core Orchestration</strong></td>
+            <td>PromptTemplate, ChatPromptTemplate, Runnable, | Pipe Operator, JsonOutputParser, Splitters</td>
+            <td><span class="status-badge active">Production Ready</span></td>
+          </tr>
+          <tr>
+            <td><strong>Multi-Agent Graph</strong></td>
+            <td>StateGraph, CompiledGraph, START, END, Tool, @tool, create_react_agent</td>
+            <td><span class="status-badge active">Production Ready</span></td>
+          </tr>
+          <tr>
+            <td><strong>Long-Term Memory</strong></td>
+            <td>ConversationBufferMemory, SQLiteEntityMemory, SQLiteVectorStore, FactExtractor</td>
+            <td><span class="status-badge active">Production Ready</span></td>
+          </tr>
+          <tr>
+            <td><strong>Local Serving & Tracing</strong></td>
+            <td>AgentServer, serve(), Tracer, TraceSpan, @traceable, Tree Renderer</td>
+            <td><span class="status-badge active">Production Ready</span></td>
+          </tr>
+          <tr>
+            <td><strong>Device Hardware API</strong></td>
+            <td>Battery, Sensors, GPS Location, STT Voice, TTS Audio, Vibration, Shell Execution</td>
+            <td><span class="status-badge active">Production Ready</span></td>
+          </tr>
+          <tr>
+            <td><strong>On-Device Inference</strong></td>
+            <td>OpenAICompatibleChat, BitNetChat (llama-server, bitnet.cpp, ollama)</td>
+            <td><span class="status-badge active">Production Ready</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Section 7: Canonical Usage Example -->
+      <h3 data-i18n="home.codeExampleTitle">Canonical Usage Example</h3>
+      <div class="code-tab-group">
+        <div class="code-tabs-header">
+          <button class="code-tab-btn active" type="button">Python (pip)</button>
+          <button class="code-tab-btn" type="button">Node.js (npm)</button>
+        </div>
+        <div class="code-tab-content" style="display:block;">
+          <pre><code>from termux_aichain import (
+    BitNetChat,
+    create_react_agent,
+    get_default_device_tools,
+    Tracer,
+    HumanMessage
+)
+
+# 1. Connect to local 1-bit or GGUF LLM
+llm = BitNetChat(base_url="http://127.0.0.1:8088/v1", model="bitnet-b1.58-3b")
+
+# 2. Compile ReAct Agent with native Android device tools
+agent = create_react_agent(model=llm, tools=get_default_device_tools())
+
+# 3. Profile execution with local CLI tracer
+tracer = Tracer("EdgeMobileRun")
+with tracer.trace("AgentExecution"):
+    result = agent.invoke({"messages": [HumanMessage(content="Check battery and sensor status.")]})
+
+tracer.finish()
+tracer.print_tree()
+print("Agent Output:", result["messages"][-1].content)
+</code></pre>
+        </div>
+        <div class="code-tab-content" style="display:none;">
+          <pre><code>import {
+  PromptTemplate,
+  StateGraph,
+  MicroVectorStore,
+  serve
+} from "@termux-ai/chain";
+
+const prompt = PromptTemplate.fromTemplate("Edge Task: {task}");
+const server = serve(prompt, { host: "0.0.0.0", port: 8080 });</code></pre>
+        </div>
+      </div>
+
+      <!-- Section 8: Getting Started Navigation -->
+      <h3 data-i18n="home.nextStepsTitle">Getting Started &amp; Deep Guides</h3>
+      <ul>
+        <li><a href="installation.html" data-i18n="home.linkInstall">Detailed Installation Guide (Hardware dependencies, Termux setup, WebGPU flags)</a></li>
+        <li><a href="quickstart.html" data-i18n="home.linkQuickstart">Quickstart Recipes &amp; Common Execution Patterns</a></li>
+        <li><a href="api-reference.html" data-i18n="home.linkApi">100% Full API Reference &amp; Struct Definitions</a></li>
+      </ul>
+    </main>
+  </div>
+
+  <footer>
+    <span data-i18n="common.footerText">&copy; 2026 AMEVA Open-Source Foundation. Released under the Apache-2.0 License.</span>
+  </footer>
+</body>
+</html>

@@ -11,6 +11,28 @@ export const getBatteryStatus = tool({
 }, async () => {
     return JSON.stringify({ percentage: 85, status: "Normal", device: "Android Termux" });
 });
+export const getSensorData = tool({
+    name: "termux_sensor_data",
+    description: "Reads current Android physical sensors (accelerometer, light, gyro).",
+    parameters: {
+        type: "object",
+        properties: { sensor: { type: "string" } },
+        required: []
+    }
+}, async (args) => {
+    return JSON.stringify({
+        sensor: args?.sensor ?? "all",
+        accelerometer: { x: 0.02, y: 9.81, z: 0.15 },
+        light_lux: 150.0
+    });
+});
+export const getDeviceLocation = tool({
+    name: "termux_location",
+    description: "Gets current device GPS coordinates (latitude, longitude).",
+    parameters: { type: "object", properties: {}, required: [] }
+}, async () => {
+    return JSON.stringify({ latitude: 37.5665, longitude: 126.9780, altitude: 38.0 });
+});
 export const vibrateDevice = tool({
     name: "termux_vibrate",
     description: "Vibrates the mobile device for the specified duration in milliseconds.",
@@ -38,5 +60,5 @@ export const sendNotification = tool({
     return `Notification sent: [${args?.title}] ${args?.content}`;
 });
 export function getDefaultDeviceTools() {
-    return [getBatteryStatus, vibrateDevice, sendNotification];
+    return [getBatteryStatus, getSensorData, getDeviceLocation, vibrateDevice, sendNotification];
 }

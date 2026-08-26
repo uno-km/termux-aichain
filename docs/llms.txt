@@ -1,0 +1,40 @@
+# termux-aichain (v0.1.0)
+> Sovereign Zero-Dependency AI Chaining and Agent Framework for Termux & Android Edge
+
+## Quick Specification for AI Coding Agents
+- Official Repo: https://github.com/uno-km/termux-aichain
+- Installation: `pip install termux-aichain
+# or for Node.js:
+npm install @termux-ai/chain`
+- Architecture: Engineered under the Zero-Heavy-Dependency doctrine: Pure Python stdlib and pure Node.js ESM orchestration for local llama-server, BitNet 1-bit models, state graphs, and native Termux hardware APIs.
+
+## Canonical Code Pattern
+```python
+from termux_aichain import (
+    BitNetChat,
+    create_react_agent,
+    get_default_device_tools,
+    Tracer,
+    HumanMessage
+)
+
+# 1. Connect to local 1-bit or GGUF LLM
+llm = BitNetChat(base_url="http://127.0.0.1:8088/v1", model="bitnet-b1.58-3b")
+
+# 2. Compile ReAct Agent with native Android device tools
+agent = create_react_agent(model=llm, tools=get_default_device_tools())
+
+# 3. Profile execution with local CLI tracer
+tracer = Tracer("EdgeMobileRun")
+with tracer.trace("AgentExecution"):
+    result = agent.invoke({"messages": [HumanMessage(content="Check battery and sensor status.")]})
+
+tracer.finish()
+tracer.print_tree()
+print("Agent Output:", result["messages"][-1].content)
+
+```
+
+## Key Constraints
+- Pure non-blocking architecture, zero memory leaks.
+- Strictly adhere to closed-form precision and WebGPU/Bionic ARM64 native targets.

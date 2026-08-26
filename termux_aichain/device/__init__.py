@@ -6,6 +6,9 @@ termux-aichain Device Module Exports
 
 from termux_aichain.device.tools import (
     get_battery_status,
+    get_sensor_data,
+    get_device_location,
+    record_speech_to_text,
     vibrate_device,
     send_notification,
     speak_tts,
@@ -15,6 +18,9 @@ from termux_aichain.device.tools import (
 
 __all__ = [
     "get_battery_status",
+    "get_sensor_data",
+    "get_device_location",
+    "record_speech_to_text",
     "vibrate_device",
     "send_notification",
     "speak_tts",

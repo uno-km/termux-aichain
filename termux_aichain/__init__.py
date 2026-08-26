@@ -30,6 +30,7 @@ from termux_aichain.core.base import (
     BaseChatModel,
 )
 from termux_aichain.core.providers.openai_compatible import OpenAICompatibleChat
+from termux_aichain.core.providers.bitnet import BitNetChat
 from termux_aichain.core.parsers import (
     StringOutputParser,
     JsonOutputParser,
@@ -61,6 +62,9 @@ from termux_aichain.serve.server import AgentServer, serve
 from termux_aichain.trace.tracer import TraceSpan, Tracer, traceable
 from termux_aichain.device.tools import (
     get_battery_status,
+    get_sensor_data,
+    get_device_location,
+    record_speech_to_text,
     vibrate_device,
     send_notification,
     speak_tts,
@@ -85,6 +89,7 @@ __all__ = [
     "RunnableSequence",
     "BaseChatModel",
     "OpenAICompatibleChat",
+    "BitNetChat",
     "StringOutputParser",
     "JsonOutputParser",
     "RegexOutputParser",
@@ -111,6 +116,9 @@ __all__ = [
     "Tracer",
     "traceable",
     "get_battery_status",
+    "get_sensor_data",
+    "get_device_location",
+    "record_speech_to_text",
     "vibrate_device",
     "send_notification",
     "speak_tts",

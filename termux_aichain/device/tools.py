@@ -3,7 +3,7 @@
 termux-aichain Device Toolkit: Android & Termux Native Hardware Tools
 ==============================================================================
 Provides standard Tool interfaces for Termux-API hardware controls
-(battery, sensors, vibration, TTS, notifications, camera, shell).
+(battery, sensors, vibration, TTS, notifications, location/GPS, STT, camera, shell).
 Zero external heavy dependencies - Pure Python 3.10+ standard library.
 """
 
@@ -69,6 +69,73 @@ def get_battery_status() -> str:
         return json.dumps({"percentage": level, "status": "Active", "source": "dumpsys"})
 
     return json.dumps({"percentage": 85, "status": "Simulated", "note": "Safe fallback"})
+
+@tool(
+    name="termux_sensor_data",
+    description="Reads current Android physical sensors (accelerometer, gyroscope, light, pressure).",
+    parameters={
+        "type": "object",
+        "properties": {
+            "sensor": {"type": "string", "description": "Sensor name: 'all', 'accel', 'gyro', 'light'"}
+        },
+        "required": []
+    }
+)
+def get_sensor_data(sensor: str = "all") -> str:
+    """Reads sensor data via termux-sensor CLI or fallback."""
+    if shutil.which("termux-sensor"):
+        cmd = ["termux-sensor", "-n", "1"]
+        if sensor and sensor != "all":
+            cmd.extend(["-s", sensor])
+        res = _run_cmd(cmd, timeout=2.5)
+        if res:
+            return res
+    return json.dumps({
+        "sensor": sensor,
+        "accelerometer": {"x": 0.02, "y": 9.81, "z": 0.15},
+        "light_lux": 150.0,
+        "status": "Simulated",
+        "note": "Non-termux or sensor timeout fallback"
+    })
+
+@tool(
+    name="termux_location",
+    description="Gets current device GPS/Network location coordinates (latitude, longitude, altitude, accuracy).",
+    parameters={
+        "type": "object",
+        "properties": {
+            "provider": {"type": "string", "description": "Location provider: 'gps', 'network', or 'last'"}
+        },
+        "required": []
+    }
+)
+def get_device_location(provider: str = "last") -> str:
+    """Reads device GPS/location coordinates."""
+    if shutil.which("termux-location"):
+        res = _run_cmd(["termux-location", "-p", provider, "-r", "last"], timeout=2.5)
+        if res:
+            return res
+    return json.dumps({
+        "latitude": 37.5665,
+        "longitude": 126.9780,
+        "altitude": 38.0,
+        "accuracy": 15.0,
+        "provider": provider,
+        "status": "Simulated"
+    })
+
+@tool(
+    name="termux_speech_to_text",
+    description="Captures live audio from microphone and converts spoken voice into text (STT).",
+    parameters={"type": "object", "properties": {}, "required": []}
+)
+def record_speech_to_text() -> str:
+    """Captures microphone speech using termux-speech-to-text."""
+    if shutil.which("termux-speech-to-text"):
+        res = _run_cmd(["termux-speech-to-text"], timeout=5.0)
+        if res:
+            return res
+    return "Termux AI Chain edge speech recognition simulated result."
 
 @tool(
     name="termux_vibrate",
@@ -154,9 +221,12 @@ def execute_shell(command: str) -> str:
         return f"Failed to execute command: {str(ex)}"
 
 def get_default_device_tools() -> List[Tool]:
-    """Returns the suite of standard Termux/Android device tools."""
+    """Returns the comprehensive suite of standard Termux/Android device tools."""
     return [
         get_battery_status,
+        get_sensor_data,
+        get_device_location,
+        record_speech_to_text,
         vibrate_device,
         send_notification,
         speak_tts,
