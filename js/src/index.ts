@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ==============================================================================
  * @termux-ai/chain: Sovereign Zero-Dependency Edge AI Framework for Termux & Android
  * ==============================================================================
@@ -12,3 +12,6 @@ export * from "./core/base.js";
 export * from "./core/providers/openai_compatible.js";
 export * from "./core/parsers.js";
 export * from "./core/splitters.js";
+
+export * from "./graph/state.js";
+export * from "./graph/agent.js";
