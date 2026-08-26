@@ -146,4 +146,4 @@ tests/test_trace.py::test_tracer_render_tree PASSED                      [ 99%]
 tests/test_trace.py::test_tracer_export_jsonl PASSED                     [100%]
 
 - generated xml file: C:\Users\GAME\Desktop\uno-km\dev\termux-aichain\artifacts\pytest.xml -
-============================= 136 passed in 9.38s =============================
+============================= 136 passed in 9.23s =============================
