@@ -135,6 +135,7 @@ def test_cmd_run_newly_started_server_is_identity_verified(monkeypatch, tmp_path
                 return FakePostSpawnResp()
 
     monkeypatch.setattr("urllib.request.build_opener", lambda *args: DynamicOpener())
+    monkeypatch.setattr("urllib.request.urlopen", lambda *args, **kwargs: DynamicOpener().open(None))
     monkeypatch.setattr("shutil.which", lambda name: f"/fake/{name}")
     stopped_called = False
     monkeypatch.setattr(LocalServerManager, "start", lambda self, **kwargs: None)

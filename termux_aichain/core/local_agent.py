@@ -190,7 +190,7 @@ class ServerIdentityVerifier:
             raise ServerProtocolMismatchError(f"Service mismatch: expected '{expected_service}', got '{service_id}'.")
 
         # Resolve capability profile requirements
-        profile = SERVER_PROFILES.get(service_id)
+        profile = SERVER_PROFILES.get(expected_service) if expected_service else None
         effective_expected_protocol = expected_protocol_version or (profile.expected_protocol_version if profile and profile.require_protocol_version else None)
 
         raw_protocol = payload.get("protocolVersion") or payload.get("version")
