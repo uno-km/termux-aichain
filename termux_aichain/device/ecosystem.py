@@ -2,7 +2,8 @@
 ==============================================================================
 termux-aichain Device Ecosystem: Integrations with uno-km Edge Projects
 ==============================================================================
-Provides standard Tool interfaces for uno-km edge modules:
+Provides standard Tool interfaces for uno-km sovereign edge modules:
+- termux-bitnet (1.58-bit On-Device LLM)
 - termux-stt (Speech-to-Text)
 - termux-diffusion (Device Resource-based Image Generation)
 - termux-playwright (Headless Browser Automation)
@@ -26,6 +27,35 @@ def _safe_exec(args: List[str], timeout: float = 15.0) -> Optional[str]:
         return None
     except Exception:
         return None
+
+@tool(
+    name="termux_bitnet_infer",
+    description="Invokes on-device 1.58-bit BitNet LLM engine for fast local text generation.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "prompt": {"type": "string", "description": "Input prompt for BitNet LLM"},
+            "max_tokens": {"type": "integer", "description": "Maximum tokens to generate (default: 128)"}
+        },
+        "required": ["prompt"]
+    }
+)
+def infer_bitnet_llm(prompt: str, max_tokens: int = 128) -> str:
+    """Invokes termux-bitnet CLI or returns explicit error status."""
+    bitnet_bin = shutil.which("termux-bitnet")
+    if not bitnet_bin:
+        return json.dumps({
+            "error": "TERMUX_BITNET_NOT_FOUND",
+            "message": "termux-bitnet CLI is not installed in PATH. Install via 'pip install termux-bitnet' or 'termux-aichain install bitnet'."
+        })
+
+    out = _safe_exec([bitnet_bin, "--prompt", prompt, "--n-predict", str(int(max_tokens))], timeout=45.0)
+    if out:
+        return out
+    return json.dumps({
+        "error": "BITNET_INFERENCE_FAILED",
+        "message": f"termux-bitnet failed to generate output for prompt '{prompt}'."
+    })
 
 @tool(
     name="termux_stt_transcribe",
@@ -126,6 +156,7 @@ def browse_web_headless(url: str, query: str = "") -> str:
 def get_ecosystem_tools() -> List[Tool]:
     """Returns the suite of uno-km edge ecosystem tools."""
     return [
+        infer_bitnet_llm,
         transcribe_speech,
         generate_diffusion_image,
         browse_web_headless,

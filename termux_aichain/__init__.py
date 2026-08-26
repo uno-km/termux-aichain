@@ -6,7 +6,7 @@ Copyright (c) 2026 AMEVA Open-Source Foundation & UnoKim.
 Licensed under the Apache License, Version 2.0.
 """
 
-__version__ = "1.0.7"
+__version__ = "1.0.8"
 __author__ = "UnoKim <uno-km@users.noreply.github.com>"
 
 from termux_aichain.core.schema import (
@@ -79,6 +79,7 @@ from termux_aichain.device.tools import (
     get_default_device_tools,
 )
 from termux_aichain.device.ecosystem import (
+    infer_bitnet_llm,
     transcribe_speech,
     generate_diffusion_image,
     browse_web_headless,
@@ -142,6 +143,7 @@ __all__ = [
     "speak_tts",
     "execute_shell",
     "get_default_device_tools",
+    "infer_bitnet_llm",
     "transcribe_speech",
     "generate_diffusion_image",
     "browse_web_headless",

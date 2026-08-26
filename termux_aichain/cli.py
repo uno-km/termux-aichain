@@ -3,7 +3,7 @@
 termux-aichain Unified Command Line Interface & Full Ecosystem Provisioner
 ==============================================================================
 Provides sovereign zero-state setup, environment diagnostics, model pull,
-full multimodal ecosystem auto-provisioning (stt, diffusion, playwright, train),
+full multimodal ecosystem auto-provisioning (bitnet, stt, diffusion, playwright, train),
 and 1-line serving.
 Zero external heavy dependencies - Pure Python 3.10+ standard library.
 """
@@ -36,6 +36,11 @@ MODELS_REGISTRY = {
 }
 
 ECOSYSTEM_MODULES = {
+    "bitnet": {
+        "pypi": "termux-bitnet",
+        "post_install": ["termux-bitnet", "--help"],
+        "desc": "On-device 1.58-bit BitNet LLM inference engine & server"
+    },
     "stt": {
         "pypi": "termux-stt",
         "post_install": ["termux-stt", "doctor"],
@@ -61,7 +66,7 @@ ECOSYSTEM_MODULES = {
 def cmd_install(target: str = "core", install_all: bool = False) -> None:
     """One-touch automatic system & ecosystem package installer for Termux."""
     print("=" * 75)
-    print(f"[INSTALL] termux-aichain v{__version__} One-Touch Ecosystem Provisioner")
+    print(f"[INSTALL] termux-aichain v{__version__} One-Touch Full Ecosystem Provisioner")
     print("=" * 75)
 
     is_termux = "com.termux" in os.environ.get("PREFIX", "") or os.path.exists("/data/data/com.termux") or bool(shutil.which("pkg"))
@@ -89,7 +94,7 @@ def cmd_install(target: str = "core", install_all: bool = False) -> None:
         modules_to_install = [target]
 
     if modules_to_install:
-        print(f"\n[*] Phase 2/3: Installing AMEVA ecosystem packages: {', '.join(modules_to_install)}...")
+        print(f"\n[*] Phase 2/3: Installing AMEVA sovereign ecosystem: {', '.join(modules_to_install)}...")
         for mod_key in modules_to_install:
             mod_info = ECOSYSTEM_MODULES[mod_key]
             pkg_name = mod_info["pypi"]
@@ -160,7 +165,7 @@ def cmd_info() -> None:
     print("- Architecture    : Sovereign Zero-Heavy-Dependency Edge Framework")
     print("- Subsystems      : core, graph, memory, providers, serve, trace, device")
     print("- Native Tools    : battery, sensor, gps, vibrate, notification, tts, shell")
-    print("- Ecosystem Hooks : termux-stt, termux-diffusion, termux-playwright, termux-train")
+    print("- Ecosystem Hooks : termux-bitnet, termux-stt, termux-diffusion, termux-playwright, termux-train")
     print("- Model Registry  : " + ", ".join(MODELS_REGISTRY.keys()))
     print("- Documentation   : https://uno-km.vercel.app/lib/aichain/")
     print("=" * 75)
@@ -206,8 +211,8 @@ def main() -> None:
 
     # install (One-Touch auto-provisioning)
     inst_parser = subparsers.add_parser("install", help="One-touch auto-provisioning of Termux dependencies & ecosystem")
-    inst_parser.add_argument("target", nargs="?", default="core", choices=["core", "all", "ecosystem", "stt", "diffusion", "playwright", "train"], help="Target module to install (default: core)")
-    inst_parser.add_argument("--all", action="store_true", help="Install complete multimodal ecosystem (stt, diffusion, playwright, train)")
+    inst_parser.add_argument("target", nargs="?", default="core", choices=["core", "all", "ecosystem", "bitnet", "stt", "diffusion", "playwright", "train"], help="Target module to install (default: core)")
+    inst_parser.add_argument("--all", action="store_true", help="Install complete multimodal ecosystem (bitnet, stt, diffusion, playwright, train)")
 
     # setup
     subparsers.add_parser("setup", help="Diagnose environment and check native tools")

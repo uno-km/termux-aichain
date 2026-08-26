@@ -1,19 +1,26 @@
 """
-Unit tests for termux_aichain.device.ecosystem (STT, Diffusion, Playwright edge integrations)
+Unit tests for termux_aichain.device.ecosystem (BitNet, STT, Diffusion, Playwright edge integrations)
 """
 import json
 import pytest
 from termux_aichain.device.ecosystem import (
+    infer_bitnet_llm,
     transcribe_speech,
     generate_diffusion_image,
     browse_web_headless,
     get_ecosystem_tools
 )
 
+def test_infer_bitnet_llm():
+    res = infer_bitnet_llm(prompt="Hello", max_tokens=10)
+    assert isinstance(res, str) and len(res) > 0
+    if res.startswith("{"):
+        data = json.loads(res)
+        assert "error" in data or "text" in data
+
 def test_transcribe_speech():
     res = transcribe_speech(duration_sec=2)
     assert isinstance(res, str) and len(res) > 0
-    # Must be either actual transcription or explicit JSON diagnostic error
     if res.startswith("{"):
         data = json.loads(res)
         assert "error" in data or "text" in data
@@ -34,8 +41,9 @@ def test_browse_web_headless():
 
 def test_get_ecosystem_tools():
     tools = get_ecosystem_tools()
-    assert len(tools) == 3
+    assert len(tools) == 4
     names = [t.name for t in tools]
+    assert "termux_bitnet_infer" in names
     assert "termux_stt_transcribe" in names
     assert "termux_diffusion_generate" in names
     assert "termux_playwright_browse" in names
