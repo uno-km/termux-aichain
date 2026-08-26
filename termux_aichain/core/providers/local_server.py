@@ -37,6 +37,10 @@ class LocalServerConfig:
     rope_freq_scale: Optional[float] = None
     extra_args: List[str] = field(default_factory=list)
 
+    def build_command(self, binary_name: str = "llama-server") -> List[str]:
+        """Convenience method to generate full CLI arguments array."""
+        return LocalServerManager(self, binary_name).build_cli_args()
+
 class LocalServerManager:
     """Manages lifecycle, healthcheck, and CLI argument generation for local LLM engines."""
 

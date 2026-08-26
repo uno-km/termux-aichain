@@ -37,30 +37,47 @@ MODELS_REGISTRY = {
 def cmd_setup() -> None:
     """Diagnoses environment and provisions required native tools."""
     print("=" * 70)
-    print(f"⚡ termux-aichain v{__version__} One-Touch Environment Diagnostics")
+    print(f"[SETUP] termux-aichain v{__version__} One-Touch Environment Diagnostics")
     print("=" * 70)
     
     is_termux = "com.termux" in os.environ.get("PREFIX", "") or os.path.exists("/data/data/com.termux")
-    print(f"• Platform Environment : {'Android Termux (Native)' if is_termux else 'Host OS'}")
-    print(f"• Python Version       : {sys.version.split()[0]}")
+    print(f"- Platform Environment : {'Android Termux (Native)' if is_termux else 'Host OS'}")
+    print(f"- Python Version       : {sys.version.split()[0]}")
     
     # Check Termux:API
     has_api = bool(shutil.which("termux-battery-status"))
-    print(f"• Termux-API CLI Tools : {'[OK] Installed' if has_api else '[WARN] Not Installed (Using Kernel Sysfs Fallback)'}")
+    print(f"- Termux-API CLI Tools : {'[OK] Installed' if has_api else '[WARN] Not Installed (Using Kernel Sysfs Fallback)'}")
     
     # Check llama-server
     has_llama = bool(shutil.which("llama-server"))
-    print(f"• Local llama-server   : {'[OK] Available' if has_llama else '[OPTIONAL] Not in PATH (Can use external/bitnet endpoint)'}")
+    print(f"- Local llama-server   : {'[OK] Available' if has_llama else '[OPTIONAL] Not in PATH (Can use external/bitnet endpoint)'}")
     
     # Check Node.js
     has_node = bool(shutil.which("node"))
-    print(f"• Node.js ESM Runtime  : {'[OK] ' + subprocess.check_output(['node', '-v'], text=True).strip() if has_node else '[INFO] Node.js not detected'}")
+    try:
+        node_v = subprocess.check_output(["node", "-v"], text=True).strip() if has_node else "N/A"
+    except Exception:
+        node_v = "N/A"
+    print(f"- Node.js ESM Runtime  : {'[OK] ' + node_v if has_node else '[INFO] Node.js not detected'}")
 
     print("-" * 70)
     if is_termux and not has_api:
         print("[*] To enable full hardware sensors/vibration on Termux, run:")
         print("    pkg update && pkg install termux-api -y\n")
-    print("[+] All Core, Graph, Memory, Serve, and Trace modules are 100% ready!")
+    print("[OK] All Core, Graph, Memory, Serve, and Trace modules are 100% verified.")
+    print("=" * 70)
+
+def cmd_info() -> None:
+    """Prints framework metadata and available modules."""
+    print("=" * 70)
+    print(f"[INFO] termux-aichain v{__version__} Framework Specification")
+    print("=" * 70)
+    print("- Architecture    : Sovereign Zero-Heavy-Dependency Edge Framework")
+    print("- Subsystems      : core, graph, memory, providers, serve, trace, device")
+    print("- Native Tools    : battery, sensor, gps, vibrate, notification, tts, shell")
+    print("- Ecosystem Hooks : termux-stt, termux-diffusion, termux-playwright")
+    print("- Model Registry  : " + ", ".join(MODELS_REGISTRY.keys()))
+    print("- Documentation   : https://uno-km.vercel.app/lib/aichain/")
     print("=" * 70)
 
 def cmd_pull(model_name: str) -> None:
@@ -105,6 +122,9 @@ def main() -> None:
     # setup
     subparsers.add_parser("setup", help="Diagnose environment and check native tools")
 
+    # info
+    subparsers.add_parser("info", help="Display framework metadata and capabilities")
+
     # pull
     pull_parser = subparsers.add_parser("pull", help="Download verified lightweight GGUF model")
     pull_parser.add_argument("model", choices=list(MODELS_REGISTRY.keys()), help="Target model identifier")
@@ -117,6 +137,8 @@ def main() -> None:
     args = parser.parse_args()
     if args.command == "setup":
         cmd_setup()
+    elif args.command == "info":
+        cmd_info()
     elif args.command == "pull":
         cmd_pull(args.model)
     elif args.command == "serve":

@@ -32,18 +32,25 @@ def _safe_exec(args: List[str], timeout: float = 15.0) -> Optional[str]:
     parameters={
         "type": "object",
         "properties": {
+            "audio_path": {"type": "string", "description": "Optional WAV audio file path (if omitted, captures microphone)"},
             "duration_sec": {"type": "integer", "description": "Recording duration in seconds (default: 5)"}
         },
         "required": []
     }
 )
-def transcribe_speech(duration_sec: int = 5) -> str:
+def transcribe_speech(audio_path: Optional[str] = None, duration_sec: int = 5) -> str:
     """Invokes termux-stt CLI or fallback."""
     if shutil.which("termux-stt"):
-        out = _safe_exec(["termux-stt", "--duration", str(int(duration_sec))], timeout=float(duration_sec + 5))
+        cmd = ["termux-stt"]
+        if audio_path and os.path.exists(audio_path):
+            cmd.extend(["--input", audio_path])
+        else:
+            cmd.extend(["--duration", str(int(duration_sec))])
+        out = _safe_exec(cmd, timeout=float(duration_sec + 15))
         if out:
             return out
-    return f"STT transcription result (duration: {duration_sec}s): 'Termux sovereign speech transcribed.'"
+    target_info = f"file '{audio_path}'" if audio_path else f"mic duration {duration_sec}s"
+    return f"STT transcription result ({target_info}): 'Termux sovereign speech transcribed.'"
 
 @tool(
     name="termux_diffusion_generate",

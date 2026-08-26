@@ -7,6 +7,7 @@ Zero external heavy dependencies - Pure Python 3.10+ standard library.
 """
 
 from __future__ import annotations
+import re
 import json
 import inspect
 from dataclasses import dataclass, field
@@ -25,6 +26,16 @@ class Tool:
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         return self.func(*args, **kwargs)
+
+    def invoke(self, input_data: Any) -> Any:
+        if isinstance(input_data, dict):
+            return self.func(**input_data)
+        elif isinstance(input_data, (tuple, list)):
+            return self.func(*input_data)
+        elif input_data is None:
+            return self.func()
+        else:
+            return self.func(input_data)
 
     def to_openai_tool(self) -> Dict[str, Any]:
         """Converts to standard OpenAI Tool Calling specification."""
@@ -50,20 +61,62 @@ def tool(name: Optional[str] = None, description: Optional[str] = None, paramete
     return decorator
 
 def create_react_agent(
-    model: BaseChatModel,
-    tools: Sequence[Tool],
+    model: Union[BaseChatModel, Callable[..., Any], Any],
+    tools: Sequence[Union[Tool, Callable[..., Any]]],
     system_prompt: Optional[str] = None
 ) -> CompiledGraph:
     """Compiles a cyclic ReAct (Reasoning + Tool Acting) Agent using StateGraph."""
-    tools_by_name = {t.name: t for t in tools}
+    normalized_tools: List[Tool] = []
+    for t in tools:
+        if isinstance(t, Tool):
+            normalized_tools.append(t)
+        elif callable(t):
+            t_name = getattr(t, "__name__", "tool")
+            t_doc = (getattr(t, "__doc__", "") or f"Tool {t_name}").strip()
+            normalized_tools.append(Tool(name=t_name, description=t_doc, func=t))
+
+    tools_by_name = {t.name: t for t in normalized_tools}
 
     def agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
         messages = list(state.get("messages", []))
         if system_prompt and not any(isinstance(m, SystemMessage) for m in messages):
             messages = [SystemMessage(content=system_prompt)] + messages
 
-        gen_result = model.generate(messages)
-        ai_msg = gen_result.message
+        # Flexible model execution supporting BaseChatModel, invoke, generate, or callable
+        if hasattr(model, "generate"):
+            gen_result = model.generate(messages)
+            ai_msg = gen_result.message
+        elif hasattr(model, "invoke"):
+            resp = model.invoke(messages)
+            if isinstance(resp, AIMessage):
+                ai_msg = resp
+            else:
+                ai_msg = AIMessage(content=str(resp))
+        elif callable(model):
+            resp = model(messages)
+            if isinstance(resp, AIMessage):
+                ai_msg = resp
+            else:
+                ai_msg = AIMessage(content=str(resp))
+        else:
+            raise TypeError(f"Unsupported model type: {type(model)}")
+
+        # Fallback ReAct text parser for small edge models without native tool-calling JSON
+        if not ai_msg.tool_calls and ai_msg.content:
+            action_match = re.search(r"Action:\s*([a-zA-Z0-9_-]+)", ai_msg.content)
+            input_match = re.search(r"Action Input:\s*(\{.*?\}|\[.*?\]|[^\n]+)", ai_msg.content, re.DOTALL)
+            if action_match:
+                fn_name = action_match.group(1).strip()
+                raw_args = input_match.group(1).strip() if input_match else "{}"
+                ai_msg.tool_calls = [{
+                    "id": f"call_{len(messages)}",
+                    "type": "function",
+                    "function": {
+                        "name": fn_name,
+                        "arguments": raw_args
+                    }
+                }]
+
         return {"messages": messages + [ai_msg], "last_ai_message": ai_msg}
 
     def should_continue(state: Dict[str, Any]) -> str:
@@ -88,7 +141,7 @@ def create_react_agent(
                 try:
                     fn_args = json.loads(args_str)
                 except Exception:
-                    fn_args = {}
+                    fn_args = {"input": args_str} if args_str else {}
             elif isinstance(args_str, dict):
                 fn_args = args_str
             else:
@@ -96,23 +149,32 @@ def create_react_agent(
 
             if fn_name in tools_by_name:
                 try:
-                    tool_output = tools_by_name[fn_name](**fn_args)
+                    target_tool = tools_by_name[fn_name]
+                    if isinstance(fn_args, dict):
+                        # inspect parameter signature
+                        sig = inspect.signature(target_tool.func)
+                        if len(sig.parameters) == 0:
+                            tool_output = target_tool()
+                        else:
+                            tool_output = target_tool(**fn_args)
+                    else:
+                        tool_output = target_tool(fn_args)
                     tool_content = str(tool_output)
                 except Exception as ex:
-                    tool_content = f"Error executing tool {fn_name}: {str(ex)}"
+                    tool_content = f"Error executing tool '{fn_name}': {str(ex)}"
             else:
-                tool_content = f"Tool '{fn_name}' not found."
+                tool_content = f"Tool '{fn_name}' not found in registered tools."
 
-            new_tool_messages.append(ToolMessage(content=tool_content, tool_call_id=call_id, name=fn_name))
+            new_tool_messages.append(ToolMessage(content=tool_content, tool_call_id=call_id))
 
         return {"messages": messages + new_tool_messages}
 
     workflow = StateGraph()
-    workflow.add_node("agent_node", agent_node)
+    workflow.add_node("agent", agent_node)
     workflow.add_node("tools_node", tools_node)
 
-    workflow.set_entry_point("agent_node")
-    workflow.add_conditional_edges("agent_node", should_continue, {"tools_node": "tools_node", END: END})
-    workflow.add_edge("tools_node", "agent_node")
+    workflow.set_entry_point("agent")
+    workflow.add_conditional_edges("agent", should_continue)
+    workflow.add_edge("tools_node", "agent")
 
     return workflow.compile()

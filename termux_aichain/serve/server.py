@@ -42,7 +42,7 @@ class _AgentRequestHandler(BaseHTTPRequestHandler):
             return
 
         # 2. Health Endpoint
-        if path == "/health":
+        if path in ("/health", "/api/health", "/v1/health"):
             self.send_response(200)
             self._send_cors_headers()
             self.send_header("Content-Type", "application/json")
@@ -92,7 +92,7 @@ class _AgentRequestHandler(BaseHTTPRequestHandler):
 
         input_data = payload.get("input", payload)
 
-        if path == f"{prefix}/invoke" or path == "/invoke":
+        if path in (f"{prefix}/invoke", "/invoke", "/api/invoke", "/v1/invoke", "/v1/agent/invoke", "/agent/invoke"):
             try:
                 result = self.server.runnable.invoke(input_data)
                 serialized = self._serialize_output(result)
@@ -111,7 +111,7 @@ class _AgentRequestHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({"error": str(ex)}).encode("utf-8"))
 
-        elif path == f"{prefix}/stream" or path == "/stream":
+        elif path in (f"{prefix}/stream", "/stream", "/api/stream", "/v1/stream", "/v1/agent/stream", "/agent/stream"):
             try:
                 self.send_response(200)
                 self._send_cors_headers()

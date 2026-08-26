@@ -53,6 +53,10 @@ class SQLiteEntityMemory:
                 (key, val_str)
             )
 
+    def save_entity(self, key: str, value: Any) -> None:
+        """Alias for set() matching documented high-level memory API."""
+        self.set(key, value)
+
     def get(self, key: str, default: Any = None) -> Any:
         cursor = self.conn.cursor()
         cursor.execute("SELECT value FROM entity_store WHERE key = ?", (key,))
@@ -63,6 +67,10 @@ class SQLiteEntityMemory:
             return json.loads(row[0])
         except Exception:
             return row[0]
+
+    def get_entity(self, key: str, default: Any = None) -> Any:
+        """Alias for get() matching documented high-level memory API."""
+        return self.get(key, default)
 
     def get_all(self) -> Dict[str, Any]:
         cursor = self.conn.cursor()
@@ -139,20 +147,20 @@ class SQLiteVectorStore:
         self,
         query_embedding: List[float],
         k: int = 4
-    ) -> List[Tuple[Document, float]]:
+    ) -> List[Document]:
         cursor = self.conn.cursor()
         cursor.execute("SELECT content, metadata, embedding FROM vector_documents")
         
-        scored: List[Tuple[Document, float]] = []
+        scored: List[Document] = []
         for content, meta_str, emb_str in cursor.fetchall():
             emb = json.loads(emb_str)
             meta = json.loads(meta_str)
             score = _cosine_similarity(query_embedding, emb)
-            doc = Document(page_content=content, metadata=meta)
-            scored.append((doc, score))
+            doc = Document(page_content=content, metadata=meta, score=score)
+            scored.append(doc)
 
         # Sort descending by cosine similarity
-        scored.sort(key=lambda x: x[1], reverse=True)
+        scored.sort(key=lambda x: x.score or 0.0, reverse=True)
         return scored[:k]
 
     def close(self) -> None:

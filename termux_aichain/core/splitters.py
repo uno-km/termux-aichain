@@ -1,4 +1,4 @@
-﻿"""
+"""
 ==============================================================================
 termux-aichain Core Text Splitters & Micro Document Loaders
 ==============================================================================
@@ -17,6 +17,18 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Unio
 class Document:
     page_content: str
     metadata: Dict[str, Any] = field(default_factory=dict)
+    score: Optional[float] = None
+
+    @property
+    def content(self) -> str:
+        return self.page_content
+
+    def __getitem__(self, item: int) -> Any:
+        if item == 0:
+            return self
+        elif item == 1:
+            return self.score if self.score is not None else 0.0
+        raise IndexError("Document tuple index out of range (use 0 for doc, 1 for score)")
 
     def __repr__(self) -> str:
         snippet = self.page_content[:50].replace("\n", " ")
