@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "termux-aichain"
+version = "0.1.0"
+description = "Ultra-lightweight Zero-Dependency AI chaining & agent framework for Termux, Android and Edge computing."
+readme = "README.md"
+authors = [{ name = "UnoKim", email = "uno-km@users.noreply.github.com" }]
+license = { text = "Apache-2.0" }
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Android",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+keywords = ["termux", "android", "edge-ai", "langchain", "llama-cpp", "bitnet", "agent", "zero-dependency"]
+requires-python = ">=3.10"
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/uno-km/termux-aichain"
+Repository = "https://github.com/uno-km/termux-aichain.git"
+Issues = "https://github.com/uno-km/termux-aichain/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["termux_aichain*"]
