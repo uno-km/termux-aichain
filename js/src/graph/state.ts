@@ -1,28 +1,30 @@
 /**
  * ==============================================================================
- * @termux-ai/chain Graph Engine: StateGraph (TypeScript ESM)
+ * @termux-ai/chain Graph Engine: StateGraph & Cyclic State Machine (TypeScript ESM)
  * ==============================================================================
  */
-
-import { Runnable, createPipeline } from "../core/base.js";
 
 export const START = "__start__";
 export const END = "__end__";
 
-export type NodeAction<T = Record<string, any>> = (state: T) => Promise<Partial<T> | void> | Partial<T> | void;
-export type RouterFn<T = Record<string, any>> = (state: T) => string;
+export type StateNodeFn<T = any> = (state: T) => Promise<Partial<T> | void> | Partial<T> | void;
+export type ConditionFn<T = any> = (state: T) => Promise<string> | string;
 
-export class StateGraph<T extends Record<string, any> = Record<string, any>> {
-  private nodes: Map<string, NodeAction<T>> = new Map();
-  private edges: Map<string, string> = new Map();
-  private conditionalEdges: Map<string, { router: RouterFn<T>; pathMap?: Record<string, string> }> = new Map();
-  private entryPoint?: string;
+export interface ConditionalEdge<T = any> {
+  condition: ConditionFn<T>;
+  pathMap: Record<string, string>;
+}
 
-  addNode(name: string, action: NodeAction<T>): this {
-    if (name === START || name === END) {
-      throw new Error(`Cannot use reserved name '${name}' as node.`);
-    }
-    this.nodes.set(name, action);
+export class StateGraph<T = Record<string, any>> {
+  nodes: Map<string, StateNodeFn<T>> = new Map();
+  edges: Map<string, string> = new Map();
+  conditionalEdges: Map<string, ConditionalEdge<T>> = new Map();
+  entryPoint?: string;
+
+  constructor(stateSchema?: any) {}
+
+  addNode(name: string, fn: StateNodeFn<T>): this {
+    this.nodes.set(name, fn);
     return this;
   }
 
@@ -35,24 +37,19 @@ export class StateGraph<T extends Record<string, any> = Record<string, any>> {
     return this;
   }
 
-  addConditionalEdges(source: string, router: RouterFn<T>, pathMap?: Record<string, string>): this {
-    this.conditionalEdges.set(source, { router, pathMap });
-    return this;
-  }
-
   setEntryPoint(nodeName: string): this {
     this.entryPoint = nodeName;
     return this;
   }
 
-  setFinishPoint(nodeName: string): this {
-    this.edges.set(nodeName, END);
+  addConditionalEdges(fromNode: string, condition: ConditionFn<T>, pathMap: Record<string, string>): this {
+    this.conditionalEdges.set(fromNode, { condition, pathMap });
     return this;
   }
 
   compile(): CompiledGraph<T> {
     if (!this.entryPoint) {
-      throw new Error("StateGraph requires an entry point. Use setEntryPoint() or addEdge(START, ...).");
+      throw new Error("No entry point defined. Call setEntryPoint or addEdge(START, ...).");
     }
     return new CompiledGraph<T>(
       new Map(this.nodes),
@@ -63,16 +60,16 @@ export class StateGraph<T extends Record<string, any> = Record<string, any>> {
   }
 }
 
-export class CompiledGraph<T extends Record<string, any> = Record<string, any>> implements Runnable<T, T> {
-  private nodes: Map<string, NodeAction<T>>;
-  private edges: Map<string, string>;
-  private conditionalEdges: Map<string, { router: RouterFn<T>; pathMap?: Record<string, string> }>;
-  private entryPoint: string;
+export class CompiledGraph<T = Record<string, any>> {
+  nodes: Map<string, StateNodeFn<T>>;
+  edges: Map<string, string>;
+  conditionalEdges: Map<string, ConditionalEdge<T>>;
+  entryPoint: string;
 
   constructor(
-    nodes: Map<string, NodeAction<T>>,
+    nodes: Map<string, StateNodeFn<T>>,
     edges: Map<string, string>,
-    conditionalEdges: Map<string, { router: RouterFn<T>; pathMap?: Record<string, string> }>,
+    conditionalEdges: Map<string, ConditionalEdge<T>>,
     entryPoint: string
   ) {
     this.nodes = nodes;
@@ -81,71 +78,72 @@ export class CompiledGraph<T extends Record<string, any> = Record<string, any>> 
     this.entryPoint = entryPoint;
   }
 
-  private getNextNode(currentNode: string, state: T): string {
-    const cond = this.conditionalEdges.get(currentNode);
-    if (cond) {
-      const res = cond.router(state);
-      if (cond.pathMap && res in cond.pathMap) {
-        return cond.pathMap[res];
+  async invoke(initialState: T, maxIterations: number = 25): Promise<T> {
+    let currentState: T = { ...initialState };
+    let currentNode: string | undefined = this.entryPoint;
+    let iterations = 0;
+
+    while (currentNode && currentNode !== END) {
+      iterations++;
+      if (iterations > maxIterations) {
+        throw new Error(`Graph execution exceeded max iterations limit (${maxIterations}).`);
       }
-      return res;
-    }
-    return this.edges.get(currentNode) ?? END;
-  }
 
-  async invoke(input: T, options?: { maxIterations?: number }): Promise<T> {
-    const state: T = { ...input };
-    let currentNode: string = this.entryPoint;
-    const maxIterations = options?.maxIterations ?? 50;
-    let iter = 0;
-
-    while (currentNode !== END && iter < maxIterations) {
-      const action = this.nodes.get(currentNode);
-      if (!action) {
+      const nodeFn = this.nodes.get(currentNode);
+      if (!nodeFn) {
         throw new Error(`Node '${currentNode}' is not defined in graph.`);
       }
 
-      const update = await action(state);
-      if (update && typeof update === "object") {
-        Object.assign(state, update);
+      const result = await nodeFn(currentState);
+      if (result && typeof result === "object") {
+        currentState = { ...currentState, ...result };
       }
 
-      currentNode = this.getNextNode(currentNode, state);
-      iter++;
+      const condEdge: ConditionalEdge<T> | undefined = this.conditionalEdges.get(currentNode);
+      if (condEdge) {
+        const targetKey: string = await Promise.resolve(condEdge.condition(currentState));
+        currentNode = condEdge.pathMap[targetKey];
+      } else if (this.edges.has(currentNode)) {
+        currentNode = this.edges.get(currentNode);
+      } else {
+        currentNode = END;
+      }
     }
 
-    if (iter >= maxIterations) {
-      throw new Error(`StateGraph exceeded maxIterations limit (${maxIterations}).`);
-    }
-
-    return state;
+    return currentState;
   }
 
-  async *stream(input: T, options?: { maxIterations?: number }): AsyncIterable<[string, T]> {
-    const state: T = { ...input };
-    let currentNode: string = this.entryPoint;
-    const maxIterations = options?.maxIterations ?? 50;
-    let iter = 0;
+  async *stream(initialState: T, maxIterations: number = 25): AsyncGenerator<[string, T]> {
+    let currentState: T = { ...initialState };
+    let currentNode: string | undefined = this.entryPoint;
+    let iterations = 0;
 
-    while (currentNode !== END && iter < maxIterations) {
-      const action = this.nodes.get(currentNode);
-      if (!action) {
+    while (currentNode && currentNode !== END) {
+      iterations++;
+      if (iterations > maxIterations) {
+        throw new Error(`Graph execution exceeded max iterations limit (${maxIterations}).`);
+      }
+
+      const nodeFn = this.nodes.get(currentNode);
+      if (!nodeFn) {
         throw new Error(`Node '${currentNode}' is not defined in graph.`);
       }
 
-      const update = await action(state);
-      if (update && typeof update === "object") {
-        Object.assign(state, update);
+      const result = await nodeFn(currentState);
+      if (result && typeof result === "object") {
+        currentState = { ...currentState, ...result };
       }
+      yield [currentNode, currentState];
 
-      yield [currentNode, { ...state }];
-
-      currentNode = this.getNextNode(currentNode, state);
-      iter++;
+      const condEdge: ConditionalEdge<T> | undefined = this.conditionalEdges.get(currentNode);
+      if (condEdge) {
+        const targetKey: string = await Promise.resolve(condEdge.condition(currentState));
+        currentNode = condEdge.pathMap[targetKey];
+      } else if (this.edges.has(currentNode)) {
+        currentNode = this.edges.get(currentNode);
+      } else {
+        currentNode = END;
+      }
     }
-  }
-
-  pipe<NextOutput>(next: any): any {
-    return createPipeline([this, next]);
   }
 }
