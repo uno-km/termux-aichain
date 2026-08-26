@@ -26,13 +26,19 @@ def _cosine_similarity(v1: List[float], v2: List[float]) -> float:
     return dot / (norm_a * norm_b)
 
 class SQLiteEntityMemory:
-    """Persistent entity & key-value fact memory backed by SQLite."""
+    """Persistent entity & key-value fact memory backed by SQLite with WAL optimization."""
 
     def __init__(self, db_path: str = ":memory:"):
         self.db_path = db_path
         if db_path != ":memory:":
             os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
         self.conn = sqlite3.connect(self.db_path)
+        if self.db_path != ":memory:":
+            try:
+                self.conn.execute("PRAGMA journal_mode = WAL;")
+                self.conn.execute("PRAGMA synchronous = NORMAL;")
+            except Exception:
+                pass
         self._init_db()
 
     def _init_db(self) -> None:
@@ -63,30 +69,31 @@ class SQLiteEntityMemory:
         row = cursor.fetchone()
         if not row:
             return default
+        raw_val = row[0]
         try:
-            return json.loads(row[0])
+            return json.loads(raw_val)
         except Exception:
-            return row[0]
+            return raw_val
 
     def get_entity(self, key: str, default: Any = None) -> Any:
         """Alias for get() matching documented high-level memory API."""
         return self.get(key, default)
 
+    def delete(self, key: str) -> bool:
+        with self.conn:
+            cursor = self.conn.execute("DELETE FROM entity_store WHERE key = ?", (key,))
+            return cursor.rowcount > 0
+
     def get_all(self) -> Dict[str, Any]:
         cursor = self.conn.cursor()
         cursor.execute("SELECT key, value FROM entity_store")
-        res = {}
-        for k, v in cursor.fetchall():
+        results = {}
+        for key, val in cursor.fetchall():
             try:
-                res[k] = json.loads(v)
+                results[key] = json.loads(val)
             except Exception:
-                res[k] = v
-        return res
-
-    def delete(self, key: str) -> bool:
-        with self.conn:
-            cur = self.conn.execute("DELETE FROM entity_store WHERE key = ?", (key,))
-            return cur.rowcount > 0
+                results[key] = val
+        return results
 
     def clear(self) -> None:
         with self.conn:
@@ -96,13 +103,19 @@ class SQLiteEntityMemory:
         self.conn.close()
 
 class SQLiteVectorStore:
-    """Zero-dependency micro vector store using SQLite and pure cosine similarity."""
+    """Ultra-lightweight SQLite vector store executing pure cosine similarity without C extensions."""
 
     def __init__(self, db_path: str = ":memory:"):
         self.db_path = db_path
         if db_path != ":memory:":
             os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
         self.conn = sqlite3.connect(self.db_path)
+        if self.db_path != ":memory:":
+            try:
+                self.conn.execute("PRAGMA journal_mode = WAL;")
+                self.conn.execute("PRAGMA synchronous = NORMAL;")
+            except Exception:
+                pass
         self._init_db()
 
     def _init_db(self) -> None:
@@ -110,9 +123,9 @@ class SQLiteVectorStore:
             self.conn.execute("""
                 CREATE TABLE IF NOT EXISTS vector_documents (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    content TEXT NOT NULL,
-                    metadata TEXT NOT NULL,
-                    embedding TEXT NOT NULL
+                    text TEXT NOT NULL,
+                    embedding TEXT NOT NULL,
+                    metadata TEXT NOT NULL
                 )
             """)
 
@@ -123,25 +136,18 @@ class SQLiteVectorStore:
         metadatas: Optional[List[Dict[str, Any]]] = None
     ) -> List[int]:
         if len(texts) != len(embeddings):
-            raise ValueError("Length of texts and embeddings must match.")
-        
-        ids = []
-        with self.conn:
-            for i, text in enumerate(texts):
-                meta = metadatas[i] if metadatas and i < len(metadatas) else {}
-                emb_json = json.dumps(embeddings[i])
-                meta_json = json.dumps(meta, ensure_ascii=False)
-                cursor = self.conn.execute(
-                    "INSERT INTO vector_documents (content, metadata, embedding) VALUES (?, ?, ?)",
-                    (text, meta_json, emb_json)
-                )
-                ids.append(cursor.lastrowid)
-        return ids
+            raise ValueError(f"Mismatch: {len(texts)} texts and {len(embeddings)} embeddings")
 
-    def add_documents(self, documents: List[Document], embeddings: List[List[float]]) -> List[int]:
-        texts = [doc.page_content for doc in documents]
-        metadatas = [doc.metadata for doc in documents]
-        return self.add_texts(texts, embeddings, metadatas)
+        inserted_ids: List[int] = []
+        with self.conn:
+            for idx, (text, emb) in enumerate(zip(texts, embeddings)):
+                meta = metadatas[idx] if metadatas and idx < len(metadatas) else {}
+                cursor = self.conn.execute(
+                    "INSERT INTO vector_documents (text, embedding, metadata) VALUES (?, ?, ?)",
+                    (text, json.dumps(emb), json.dumps(meta, ensure_ascii=False))
+                )
+                inserted_ids.append(cursor.lastrowid)
+        return inserted_ids
 
     def similarity_search_by_vector(
         self,
@@ -149,19 +155,22 @@ class SQLiteVectorStore:
         k: int = 4
     ) -> List[Document]:
         cursor = self.conn.cursor()
-        cursor.execute("SELECT content, metadata, embedding FROM vector_documents")
-        
-        scored: List[Document] = []
-        for content, meta_str, emb_str in cursor.fetchall():
-            emb = json.loads(emb_str)
-            meta = json.loads(meta_str)
-            score = _cosine_similarity(query_embedding, emb)
-            doc = Document(page_content=content, metadata=meta, score=score)
-            scored.append(doc)
+        cursor.execute("SELECT id, text, embedding, metadata FROM vector_documents")
+        scored_docs: List[Tuple[float, Document]] = []
 
-        # Sort descending by cosine similarity
-        scored.sort(key=lambda x: x.score or 0.0, reverse=True)
-        return scored[:k]
+        for doc_id, text, emb_str, meta_str in cursor.fetchall():
+            doc_emb: List[float] = json.loads(emb_str)
+            meta: Dict[str, Any] = json.loads(meta_str)
+            score = _cosine_similarity(query_embedding, doc_emb)
+            doc = Document(page_content=text, metadata=meta, score=round(score, 4))
+            scored_docs.append((score, doc))
+
+        scored_docs.sort(key=lambda x: x[0], reverse=True)
+        return [doc for score, doc in scored_docs[:k]]
+
+    def clear(self) -> None:
+        with self.conn:
+            self.conn.execute("DELETE FROM vector_documents")
 
     def close(self) -> None:
         self.conn.close()

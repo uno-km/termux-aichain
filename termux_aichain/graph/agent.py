@@ -65,7 +65,7 @@ def create_react_agent(
     tools: Sequence[Union[Tool, Callable[..., Any]]],
     system_prompt: Optional[str] = None
 ) -> CompiledGraph:
-    """Compiles a cyclic ReAct (Reasoning + Tool Acting) Agent using StateGraph."""
+    """Compiles a cyclic ReAct (Reasoning + Tool Acting) Agent using StateGraph with dual-name alias resolution."""
     normalized_tools: List[Tool] = []
     for t in tools:
         if isinstance(t, Tool):
@@ -75,7 +75,22 @@ def create_react_agent(
             t_doc = (getattr(t, "__doc__", "") or f"Tool {t_name}").strip()
             normalized_tools.append(Tool(name=t_name, description=t_doc, func=t))
 
-    tools_by_name = {t.name: t for t in normalized_tools}
+    # Flexible Tool Registry Supporting Both Exact Name, Function Name & Prefix Aliases
+    tools_by_name: Dict[str, Tool] = {}
+    for t in normalized_tools:
+        tools_by_name[t.name] = t
+        if hasattr(t, "func") and hasattr(t.func, "__name__"):
+            tools_by_name[t.func.__name__] = t
+        # Prefix mappings
+        if t.name.startswith("termux_"):
+            raw_suffix = t.name.replace("termux_", "")
+            tools_by_name[raw_suffix] = t
+            tools_by_name[f"get_{raw_suffix}"] = t
+            tools_by_name[f"{raw_suffix}_device"] = t
+        else:
+            tools_by_name[f"termux_{t.name}"] = t
+            if t.name.startswith("get_"):
+                tools_by_name[f"termux_{t.name[4:]}"] = t
 
     def agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
         messages = list(state.get("messages", []))
@@ -151,7 +166,6 @@ def create_react_agent(
                 try:
                     target_tool = tools_by_name[fn_name]
                     if isinstance(fn_args, dict):
-                        # inspect parameter signature
                         sig = inspect.signature(target_tool.func)
                         if len(sig.parameters) == 0:
                             tool_output = target_tool()
