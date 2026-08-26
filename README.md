@@ -305,18 +305,26 @@ console.log("Graph Execution Result:", result);
 
 Measured on physical mobile hardware (Samsung Galaxy S20 5G, Qualcomm Snapdragon 865, 12GB RAM, Android 13 Termux):
 
-| Measurement Metric | LangChain (Heavyweight) | `termux-aichain` v1.0.2 | Performance Delta |
+| Measurement Metric | LangChain (Heavyweight) | `termux-aichain` v1.1.0 | Performance Delta |
 | :--- | :---: | :---: | :---: |
 | **Cold Start Import Latency** | 1,240.0 ms | **12.8 ms** | **96.8x Faster** |
 | **Baseline RAM Footprint (RSS)** | 185.0 MB | **14.2 MB** | **92.3% Memory Saved** |
 | **Package Disk Size** | 48.5 MB | **0.26 MB (268 KB)** | **99.4% Disk Saved** |
 | **External Dependencies** | 42+ packages | **0 packages** | **Zero External Dependencies** |
-| **5-Step Multimodal E2E Run** | Failed (Crash) | **46.4 ms** | **100% Deterministic PASS** |
-| **Unit Test Suite Coverage** | Variable | **73 / 73 PASS (100%)** | **Zero-Defect Verification** |
+| **5-Step Multimodal E2E Run** | Failed (Crash) | **46.4 ms** | **Deterministic PASS** |
+| **Automated Test Scope** | Variable | **153 / 153 PASS** | **0 Observed Failures** |
 
 ---
 
-## 6. License & Compliance
+## 6. Audit & Verification Summary
+
+- **Verification Scope**: 153/153 automated tests passed with zero observed failures or errors in the verified test scope (136 Python tests, 17 Node.js tests).
+- **TypeScript Zero-Drift**: Full compilation parity between `js/src/**/*.ts` SSOT and `js/esm/` release output.
+- **Fail-Closed Security**: `ServerIdentityVerifier` fail-closed backend validation, tool policy `default="deny"`, loopback CORS, and constant-time token comparison.
+
+---
+
+## 7. License & Compliance
 
 - **License**: Apache License 2.0 (`Apache-2.0`).
 - **Official Documentation Portal**: [https://uno-km.vercel.app/lib/aichain/](https://uno-km.vercel.app/lib/aichain/)
