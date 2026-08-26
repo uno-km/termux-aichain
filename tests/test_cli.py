@@ -44,7 +44,7 @@ def test_cmd_stop_stale_pid_does_not_kill_unrelated_process(tmp_path, monkeypatc
     from termux_aichain.cli import cmd_stop
     cmd_stop()
     out = capsys.readouterr().out
-    assert "Cleaned stale lock files" in out
+    assert "Quarantined unverifiable lock files" in out
     assert not lock_file.exists()
 
 def test_cmd_stop_live_unrelated_process_is_never_killed(tmp_path, monkeypatch, capsys):
@@ -60,7 +60,7 @@ def test_cmd_stop_live_unrelated_process_is_never_killed(tmp_path, monkeypatch, 
     from termux_aichain.cli import cmd_stop
     cmd_stop()
     out = capsys.readouterr().out
-    assert "Cleaned stale lock files" in out
+    assert "Quarantined unverifiable lock files" in out
     # Current test runner must still be alive!
     assert os.getpid() == current_pid
 

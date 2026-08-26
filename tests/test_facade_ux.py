@@ -41,7 +41,7 @@ def test_local_agent_local_factory_when_server_alive(monkeypatch):
     class FakeResp:
         status = 200
         def read(self, limit):
-            return b'{"status": "ok", "service": "llama-server", "protocolVersion": "1.0"}'
+            return b'{"status": "ok", "service": "llama-server", "protocolVersion": "1.0", "model": {"id": "qwen2.5-1.5b"}}'
         def __enter__(self): return self
         def __exit__(self, *args): pass
 

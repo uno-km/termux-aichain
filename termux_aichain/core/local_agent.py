@@ -108,7 +108,7 @@ class ServerIdentityVerifier:
         timeout_seconds: float = 10.0,
         max_health_bytes: int = 65536,
         expected_service: Optional[str] = None,
-        expected_protocol_version: str = "1.0",
+        expected_protocol_version: Optional[str] = None,
         expected_model_id: Optional[str] = None,
         expected_model_sha256: Optional[str] = None,
         require_model_identity: bool = False
