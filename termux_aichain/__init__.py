@@ -54,6 +54,9 @@ from termux_aichain.graph.agent import (
     tool,
     create_react_agent,
 )
+from termux_aichain.memory.buffer import ConversationBufferMemory
+from termux_aichain.memory.sqlite import SQLiteEntityMemory, SQLiteVectorStore
+from termux_aichain.memory.extractor import FactExtractor
 
 __all__ = [
     "__version__",
@@ -88,4 +91,8 @@ __all__ = [
     "Tool",
     "tool",
     "create_react_agent",
+    "ConversationBufferMemory",
+    "SQLiteEntityMemory",
+    "SQLiteVectorStore",
+    "FactExtractor",
 ]
