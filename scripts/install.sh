@@ -13,29 +13,26 @@ echo "[BOOTSTRAP] termux-aichain One-Touch Sovereign Installation"
 echo "=============================================================================="
 
 # 1. Update Termux Packages and core toolchain
-echo "[*] Step 1/4: Provisioning system packages and runtimes..."
+echo "[*] Step 1/3: Provisioning system packages and runtimes..."
 if command -v pkg >/dev/null 2>&1; then
     pkg update -y
     pkg install -y python nodejs-lts termux-api ffmpeg git
 else
-    echo "[*] Non-Termux host environment detected. Proceeding with pip installation."
+    echo "[*] Host OS environment detected. Proceeding with pip installation."
 fi
 
-# 2. Upgrade pip runtime
-echo "[*] Step 2/4: Upgrading pip..."
+# 2. Upgrade pip and install termux-aichain
+echo "[*] Step 2/3: Installing termux-aichain package..."
 python3 -m pip install --upgrade pip
-
-# 3. Install termux-aichain (Zero Heavy Dependencies)
-echo "[*] Step 3/4: Installing termux-aichain..."
 python3 -m pip install --upgrade termux-aichain
 
-# 4. Diagnostics check
-echo "[*] Step 4/4: Executing environment diagnostics..."
+# 3. Environment verification
+echo "[*] Step 3/3: Running one-touch verification..."
 termux-aichain setup
 
 echo "=============================================================================="
-echo "[OK] termux-aichain successfully installed and verified!"
-echo "- Launch Web Dashboard : termux-aichain serve --port 8080"
-echo "- Pull verified model  : termux-aichain pull qwen-2.5-1.5b"
-echo "- View documentation   : https://uno-km.vercel.app/lib/aichain/"
+echo "[OK] termux-aichain successfully installed and ready!"
+echo "- Pull model           : termux-aichain pull qwen-2.5-1.5b"
+echo "- Start Web Dashboard  : termux-aichain serve --port 8080"
+echo "- Documentation        : https://uno-km.vercel.app/lib/aichain/"
 echo "=============================================================================="

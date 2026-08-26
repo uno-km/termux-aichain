@@ -6,7 +6,7 @@ Copyright (c) 2026 AMEVA Open-Source Foundation & UnoKim.
 Licensed under the Apache License, Version 2.0.
 """
 
-__version__ = "1.0.5"
+__version__ = "1.0.6"
 __author__ = "UnoKim <uno-km@users.noreply.github.com>"
 
 from termux_aichain.core.schema import (

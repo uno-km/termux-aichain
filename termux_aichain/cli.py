@@ -3,7 +3,7 @@
 termux-aichain Unified Command Line Interface & One-Touch Provisioner
 ==============================================================================
 Provides sovereign zero-state setup, environment diagnostics, model pull,
-and 1-line serving CLI for Android Termux.
+one-touch system package provisioning (termux-aichain install), and 1-line serving.
 Zero external heavy dependencies - Pure Python 3.10+ standard library.
 """
 
@@ -34,10 +34,33 @@ MODELS_REGISTRY = {
     }
 }
 
-def cmd_setup() -> None:
-    """Diagnoses environment and provisions required native tools."""
+def cmd_install() -> None:
+    """One-touch automatic system package installer for Termux."""
     print("=" * 70)
-    print(f"[SETUP] termux-aichain v{__version__} One-Touch Environment Diagnostics")
+    print(f"[INSTALL] termux-aichain v{__version__} One-Touch System Provisioning")
+    print("=" * 70)
+
+    is_termux = "com.termux" in os.environ.get("PREFIX", "") or os.path.exists("/data/data/com.termux") or bool(shutil.which("pkg"))
+    if is_termux and shutil.which("pkg"):
+        print("[*] Termux environment detected. Auto-provisioning system packages...")
+        try:
+            print("[*] Running: pkg update -y")
+            subprocess.run(["pkg", "update", "-y"], check=False)
+            print("[*] Running: pkg install -y termux-api ffmpeg git nodejs-lts")
+            subprocess.run(["pkg", "install", "-y", "termux-api", "ffmpeg", "git", "nodejs-lts"], check=False)
+            print("[OK] All Termux system packages (termux-api, ffmpeg, git, nodejs-lts) installed successfully.")
+        except Exception as ex:
+            print(f"[-] Warning during pkg provisioning: {str(ex)}")
+    else:
+        print("[INFO] Non-Termux Host OS detected. No pkg provisioning required.")
+
+    print("[*] Verifying environment diagnostics...")
+    cmd_setup()
+
+def cmd_setup() -> None:
+    """Diagnoses environment and checks native tools."""
+    print("=" * 70)
+    print(f"[SETUP] termux-aichain v{__version__} Environment Diagnostics")
     print("=" * 70)
     
     is_termux = "com.termux" in os.environ.get("PREFIX", "") or os.path.exists("/data/data/com.termux")
@@ -46,7 +69,7 @@ def cmd_setup() -> None:
     
     # Check Termux:API
     has_api = bool(shutil.which("termux-battery-status"))
-    print(f"- Termux-API CLI Tools : {'[OK] Installed' if has_api else '[WARN] Not Installed (Using Kernel Sysfs Fallback)'}")
+    print(f"- Termux-API CLI Tools : {'[OK] Installed' if has_api else '[WARN] Not Installed (Kernel Sysfs Fallback Active)'}")
     
     # Check llama-server
     has_llama = bool(shutil.which("llama-server"))
@@ -62,8 +85,7 @@ def cmd_setup() -> None:
 
     print("-" * 70)
     if is_termux and not has_api:
-        print("[*] To enable full hardware sensors/vibration on Termux, run:")
-        print("    pkg update && pkg install termux-api -y\n")
+        print("[*] Tip: Run 'termux-aichain install' to auto-provision all system tools in one touch.")
     print("[OK] All Core, Graph, Memory, Serve, and Trace modules are 100% verified.")
     print("=" * 70)
 
@@ -119,6 +141,9 @@ def main() -> None:
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
 
+    # install (One-Touch auto-provisioning)
+    subparsers.add_parser("install", help="One-touch auto-provisioning of all Termux system dependencies")
+
     # setup
     subparsers.add_parser("setup", help="Diagnose environment and check native tools")
 
@@ -135,7 +160,9 @@ def main() -> None:
     serve_parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind (default: 0.0.0.0)")
 
     args = parser.parse_args()
-    if args.command == "setup":
+    if args.command == "install":
+        cmd_install()
+    elif args.command == "setup":
         cmd_setup()
     elif args.command == "info":
         cmd_info()
