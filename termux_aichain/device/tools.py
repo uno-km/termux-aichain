@@ -152,6 +152,19 @@ def record_speech_to_text() -> str:
         "message": "termux-speech-to-text command not found. Install termux-api or use uno-km/termux-stt."
     })
 
+def _ensure_termux_api_service_alive() -> None:
+    """Wakes up Termux:API background service on modern Android (14/15/16) to prevent intent dropping."""
+    if shutil.which("am"):
+        try:
+            subprocess.run(
+                ["am", "startservice", "--user", "0", "-n", "com.termux.api/.TermuxApiService"],
+                capture_output=True,
+                timeout=1.0,
+                check=False
+            )
+        except Exception:
+            pass
+
 @tool(
     name="termux_vibrate",
     description="Vibrates the mobile device for the specified duration in milliseconds.",
@@ -165,17 +178,30 @@ def record_speech_to_text() -> str:
     }
 )
 def vibrate_device(duration_ms: int = 500, force: bool = True) -> str:
-    """Triggers physical haptic vibration via termux-vibrate."""
+    """Triggers physical haptic vibration via termux-vibrate with Android 16 service pre-wake."""
     if shutil.which("termux-vibrate"):
+        _ensure_termux_api_service_alive()
         cmd = ["termux-vibrate"]
         if force:
             cmd.append("-f")
         cmd.extend(["-d", str(int(duration_ms))])
-        res = _run_cmd(cmd)
-        return json.dumps({"status": "SUCCESS", "message": f"Vibrated device for {duration_ms} ms."})
+        try:
+            res = subprocess.run(cmd, capture_output=True, text=True, timeout=5.0)
+            if res.returncode == 0:
+                return json.dumps({"status": "SUCCESS", "message": f"Vibrated device for {duration_ms} ms (force={force})."})
+            return json.dumps({
+                "error": "VIBRATION_FAILED",
+                "message": f"termux-vibrate returned exit code {res.returncode}: {res.stderr.strip()}"
+            })
+        except Exception as ex:
+            return json.dumps({
+                "error": "VIBRATION_EXCEPTION",
+                "message": f"Failed to execute termux-vibrate: {str(ex)}"
+            })
+
     return json.dumps({
         "error": "VIBRATE_UNAVAILABLE",
-        "message": "termux-vibrate command not found. Install termux-api package to enable haptic feedback."
+        "message": "termux-vibrate command not found. Install termux-api via 'pkg install termux-api' and ensure Termux:API app has background execution permissions."
     })
 
 @tool(
