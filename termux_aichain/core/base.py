@@ -10,6 +10,7 @@ Zero external heavy dependencies - Pure Python 3.10+ standard library.
 from __future__ import annotations
 import abc
 import asyncio
+import inspect
 from typing import Any, AsyncIterator, Callable, Dict, Iterator, List, Optional, Sequence, TypeVar, Union
 from termux_aichain.core.schema import Message, HumanMessage, AIMessage, GenerationResult, StreamChunk
 from termux_aichain.core.prompt import PromptTemplate, ChatPromptTemplate
@@ -78,7 +79,7 @@ class RunnableLambda(Runnable):
         return self.func(input_val, **kwargs) if kwargs else self.func(input_val)
 
     async def ainvoke(self, input_val: Any, **kwargs: Any) -> Any:
-        if asyncio.iscoroutinefunction(self.func):
+        if inspect.iscoroutinefunction(self.func):
             return await self.func(input_val, **kwargs) if kwargs else await self.func(input_val)
         return self.invoke(input_val, **kwargs)
 
