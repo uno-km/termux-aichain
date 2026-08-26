@@ -17,6 +17,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.14",
     "Operating System :: POSIX :: Linux",
     "Operating System :: Android",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
@@ -34,3 +35,7 @@ Issues = "https://github.com/uno-km/termux-aichain/issues"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["termux_aichain*"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
