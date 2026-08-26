@@ -10,7 +10,7 @@ from __future__ import annotations
 import importlib
 from typing import Any
 
-__version__ = "1.0.11"
+__version__ = "1.0.12"
 __author__ = "UnoKim <uno-km@users.noreply.github.com>"
 
 _LAZY_IMPORTS = {
@@ -38,6 +38,37 @@ _LAZY_IMPORTS = {
     "LocalServerManager": ("termux_aichain.core.providers.local_server", "LocalServerManager"),
     "LlamaCppServer": ("termux_aichain.core.providers.local_server", "LlamaCppServer"),
     "BitNetServer": ("termux_aichain.core.providers.local_server", "BitNetServer"),
+    # Enterprise LocalAgent & 4 Execution Modes
+    "LocalAgent": ("termux_aichain.core.local_agent", "LocalAgent"),
+    "AgentState": ("termux_aichain.core.agent_types", "AgentState"),
+    "ConnectConfig": ("termux_aichain.core.agent_types", "ConnectConfig"),
+    "ManagedConfig": ("termux_aichain.core.agent_types", "ManagedConfig"),
+    "EmbeddedConfig": ("termux_aichain.core.agent_types", "EmbeddedConfig"),
+    "RemoteConfig": ("termux_aichain.core.agent_types", "RemoteConfig"),
+    "ToolPolicy": ("termux_aichain.core.agent_types", "ToolPolicy"),
+    "ToolRule": ("termux_aichain.core.agent_types", "ToolRule"),
+    "ToolCallCandidate": ("termux_aichain.core.agent_types", "ToolCallCandidate"),
+    "TransportSecurityConfig": ("termux_aichain.core.agent_types", "TransportSecurityConfig"),
+    # Output Normalization
+    "OutputNormalizer": ("termux_aichain.output.normalizer", "OutputNormalizer"),
+    "RawModelResponse": ("termux_aichain.output.normalizer", "RawModelResponse"),
+    "NormalizedModelResponse": ("termux_aichain.output.normalizer", "NormalizedModelResponse"),
+    # Standard Errors
+    "LocalAgentError": ("termux_aichain.core.agent_types", "LocalAgentError"),
+    "ServerConnectionRefusedError": ("termux_aichain.core.agent_types", "ServerConnectionRefusedError"),
+    "ServerProtocolMismatchError": ("termux_aichain.core.agent_types", "ServerProtocolMismatchError"),
+    "ModelIdentityMismatchError": ("termux_aichain.core.agent_types", "ModelIdentityMismatchError"),
+    "ManagedSpawnNotSupportedError": ("termux_aichain.core.agent_types", "ManagedSpawnNotSupportedError"),
+    "ServerStartupTimeoutError": ("termux_aichain.core.agent_types", "ServerStartupTimeoutError"),
+    "DuplicateServerOwnershipError": ("termux_aichain.core.agent_types", "DuplicateServerOwnershipError"),
+    "RemoteFallbackNotAuthorizedError": ("termux_aichain.core.agent_types", "RemoteFallbackNotAuthorizedError"),
+    "ToolApprovalRequiredError": ("termux_aichain.core.agent_types", "ToolApprovalRequiredError"),
+    "ToolArgumentValidationError": ("termux_aichain.core.agent_types", "ToolArgumentValidationError"),
+    "ToolRateLimitExceededError": ("termux_aichain.core.agent_types", "ToolRateLimitExceededError"),
+    "ToolPolicyDeniedError": ("termux_aichain.core.agent_types", "ToolPolicyDeniedError"),
+    "ToolCallRepairNotAllowedError": ("termux_aichain.core.agent_types", "ToolCallRepairNotAllowedError"),
+    "DuplicateToolAliasError": ("termux_aichain.core.agent_types", "DuplicateToolAliasError"),
+    "NativeBackendUnavailableError": ("termux_aichain.core.agent_types", "NativeBackendUnavailableError"),
     # Parsers
     "StringOutputParser": ("termux_aichain.core.parsers", "StringOutputParser"),
     "JsonOutputParser": ("termux_aichain.core.parsers", "JsonOutputParser"),

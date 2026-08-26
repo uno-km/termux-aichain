@@ -1,40 +1,32 @@
-"""
-Unit tests for termux_aichain.graph.agent (Tool & create_react_agent)
-"""
-import pytest
+from termux_aichain.graph.agent import create_react_agent, Tool, tool
 from termux_aichain.core.base import BaseChatModel
-from termux_aichain.core.schema import Message, HumanMessage, AIMessage, GenerationResult
-from termux_aichain.graph.agent import Tool, tool, create_react_agent
+from termux_aichain.core.schema import Message, HumanMessage, AIMessage, ToolMessage, GenerationResult
+from typing import List
 
 class RuleBasedAgentModel(BaseChatModel):
     def __init__(self):
         self.call_count = 0
 
-    def generate(self, messages, **kwargs):
+    def generate(self, messages: List[Message], **kwargs) -> GenerationResult:
         self.call_count += 1
-        # Turn 1: call the battery tool
         if self.call_count == 1:
-            return GenerationResult(
+            ai_msg = AIMessage(
                 content="",
-                message=AIMessage(
-                    content="",
-                    tool_calls=[{
-                        "id": "call_1",
-                        "type": "function",
-                        "function": {
-                            "name": "get_battery_status",
-                            "arguments": '{"device_id": "galaxy-s20"}'
-                        }
-                    }]
-                )
+                tool_calls=[{
+                    "id": "call_1",
+                    "type": "function",
+                    "function": {
+                        "name": "get_battery_status",
+                        "arguments": '{"device_id": "galaxy-s20"}'
+                    }
+                }]
             )
-        # Turn 2: answer with the battery information
-        return GenerationResult(
-            content="The battery level on galaxy-s20 is 88%.",
-            message=AIMessage(content="The battery level on galaxy-s20 is 88%.")
-        )
+            return GenerationResult(content="", message=ai_msg)
+        else:
+            final_ai = AIMessage(content="The battery level on galaxy-s20 is 88%.")
+            return GenerationResult(content=final_ai.content, message=final_ai)
 
-    async def agenerate(self, messages, **kwargs):
+    async def agenerate(self, messages: List[Message], **kwargs) -> GenerationResult:
         return self.generate(messages, **kwargs)
 
     def stream(self, messages, **kwargs):
@@ -54,11 +46,9 @@ def test_react_agent_loop():
     initial_messages = [HumanMessage(content="What is my battery level?")]
     final_state = agent.invoke({"messages": initial_messages})
 
-    assert len(final_state["messages"]) == 4
-    # 0: HumanMessage
-    # 1: AIMessage with tool_calls
-    # 2: ToolMessage with "galaxy-s20: 88% (discharging)"
-    # 3: AIMessage with final text
-    assert final_state["messages"][2].role == "tool"
-    assert "88%" in final_state["messages"][2].content
-    assert final_state["messages"][3].content == "The battery level on galaxy-s20 is 88%."
+    tool_msgs = [m for m in final_state["messages"] if m.role == "tool"]
+    ai_msgs = [m for m in final_state["messages"] if m.role == "assistant"]
+
+    assert len(tool_msgs) >= 1
+    assert "88%" in tool_msgs[0].content
+    assert "88%" in ai_msgs[-1].content

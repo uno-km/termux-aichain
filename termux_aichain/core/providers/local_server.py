@@ -141,6 +141,41 @@ class LocalServerManager:
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
         self.stop()
 
+    @classmethod
+    def launch_and_connect(
+        cls,
+        model_path: str,
+        host: str = "127.0.0.1",
+        port: int = 8080,
+        threads: Optional[int] = None,
+        n_ctx: int = 2048,
+        binary_name: str = "llama-server",
+        temperature: float = 0.1,
+        max_tokens: int = 256,
+        timeout: float = 30.0
+    ):
+        """One-touch launcher that spins up a local server and returns a connected OpenAICompatibleChat client."""
+        from termux_aichain.core.providers.openai_compatible import OpenAICompatibleChat
+        actual_threads = threads or max(1, (os.cpu_count() or 4) - 1)
+        config = LocalServerConfig(
+            model_path=model_path,
+            host=host,
+            port=port,
+            threads=actual_threads,
+            n_ctx=n_ctx
+        )
+        manager = cls(config, binary_name=binary_name)
+        manager.start(wait_ready=True, timeout=timeout)
+        client = OpenAICompatibleChat(
+            base_url=f"http://{host}:{port}/v1",
+            model=os.path.basename(model_path),
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
+        # Attach manager to client for automatic lifecycle management
+        client._local_server_manager = manager
+        return client
+
 class LlamaCppServer(LocalServerManager):
     """Specialized manager for llama.cpp server instances."""
     def __init__(self, config: LocalServerConfig):

@@ -15,6 +15,7 @@ import shutil
 import subprocess
 from typing import Any, Dict, List, Optional
 from termux_aichain.graph.agent import Tool, tool
+from termux_aichain.core.agent_types import ToolArgumentValidationError
 
 def _run_cmd(args: List[str], timeout: float = 3.0) -> Optional[str]:
     try:
@@ -167,18 +168,25 @@ def _ensure_termux_api_service_alive() -> None:
 
 @tool(
     name="termux_vibrate",
-    description="Vibrates the mobile device for the specified duration in milliseconds.",
-    parameters={
+    description="Vibrates the mobile device for the specified duration in milliseconds (50ms ~ 2000ms).",
+        parameters={
         "type": "object",
         "properties": {
-            "duration_ms": {"type": "integer", "description": "Vibration duration in ms (e.g. 500)"},
-            "force": {"type": "boolean", "description": "Force vibration even in silent/do-not-disturb mode (default: true)"}
+            "duration_ms": {"type": "integer", "description": "Vibration duration in ms (50 to 2000)", "minimum": 50, "maximum": 2000},
+            "force": {"type": "boolean", "description": "Force vibration even in silent mode (default: false)"}
         },
         "required": ["duration_ms"]
-    }
+    },
+    aliases=("vibrate_device", "vibrate")
 )
-def vibrate_device(duration_ms: int = 500, force: bool = True) -> str:
-    """Triggers physical haptic vibration via termux-vibrate with Android 16 service pre-wake."""
+def vibrate_device(duration_ms: int = 500, force: bool = False) -> str:
+    """Triggers physical haptic vibration via termux-vibrate with strict bounds and redacted errors."""
+    if isinstance(duration_ms, bool) or not isinstance(duration_ms, int) or not (50 <= duration_ms <= 2000):
+        raise ToolArgumentValidationError(f"duration_ms must be an integer between 50 and 2000, got: {duration_ms}")
+
+    if not isinstance(force, bool):
+        raise ToolArgumentValidationError(f"force must be a boolean, got: {type(force).__name__}")
+
     if shutil.which("termux-vibrate"):
         _ensure_termux_api_service_alive()
         cmd = ["termux-vibrate"]
@@ -191,17 +199,18 @@ def vibrate_device(duration_ms: int = 500, force: bool = True) -> str:
                 return json.dumps({"status": "SUCCESS", "message": f"Vibrated device for {duration_ms} ms (force={force})."})
             return json.dumps({
                 "error": "VIBRATION_FAILED",
-                "message": f"termux-vibrate returned exit code {res.returncode}: {res.stderr.strip()}"
+                "code": res.returncode,
+                "retryable": False
             })
-        except Exception as ex:
+        except Exception:
             return json.dumps({
-                "error": "VIBRATION_EXCEPTION",
-                "message": f"Failed to execute termux-vibrate: {str(ex)}"
+                "error": "VIBRATION_EXECUTION_ERROR",
+                "retryable": False
             })
 
     return json.dumps({
         "error": "VIBRATE_UNAVAILABLE",
-        "message": "termux-vibrate command not found. Install termux-api via 'pkg install termux-api' and ensure Termux:API app has background execution permissions."
+        "retryable": False
     })
 
 @tool(

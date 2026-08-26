@@ -3,6 +3,7 @@
 termux-aichain Graph Engine: Tool Calling & ReAct Agent Factory
 ==============================================================================
 Provides zero-dependency Tool abstractions and autonomous ReAct agent graphs.
+Enforces strict JSON Schema validation and exact signature binding before execution.
 Zero external heavy dependencies - Pure Python 3.10+ standard library.
 """
 
@@ -11,10 +12,17 @@ import re
 import json
 import inspect
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+
 from termux_aichain.core.schema import Message, HumanMessage, AIMessage, SystemMessage, ToolMessage
 from termux_aichain.core.base import BaseChatModel
+from termux_aichain.core.agent_types import (
+    DuplicateToolAliasError,
+    ToolArgumentValidationError,
+    ToolCallRepairNotAllowedError,
+)
 from termux_aichain.graph.state import StateGraph, START, END, CompiledGraph
+from termux_aichain.output.normalizer import OutputNormalizer, RawModelResponse, ToolCall, OutputParserPolicy, validate_tool_arguments
 
 @dataclass
 class Tool:
@@ -23,6 +31,7 @@ class Tool:
     description: str
     func: Callable[..., Any]
     parameters: Dict[str, Any] = field(default_factory=dict)
+    aliases: Tuple[str, ...] = field(default_factory=tuple)
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         return self.func(*args, **kwargs)
@@ -52,20 +61,26 @@ class Tool:
             }
         }
 
-def tool(name: Optional[str] = None, description: Optional[str] = None, parameters: Optional[Dict[str, Any]] = None) -> Callable[[Callable[..., Any]], Tool]:
-    """Decorator to define a Tool from a Python function."""
+def tool(
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    parameters: Optional[Dict[str, Any]] = None,
+    aliases: Tuple[str, ...] = ()
+) -> Callable[[Callable[..., Any]], Tool]:
+    """Decorator to define a Tool from a Python function with explicit aliases."""
     def decorator(fn: Callable[..., Any]) -> Tool:
         tool_name = name or fn.__name__
         tool_doc = description or (fn.__doc__ or "").strip() or f"Executes {tool_name}"
-        return Tool(name=tool_name, description=tool_doc, func=fn, parameters=parameters or {})
+        return Tool(name=tool_name, description=tool_doc, func=fn, parameters=parameters or {}, aliases=aliases)
     return decorator
 
 def create_react_agent(
     model: Union[BaseChatModel, Callable[..., Any], Any],
     tools: Sequence[Union[Tool, Callable[..., Any]]],
-    system_prompt: Optional[str] = None
+    system_prompt: Optional[str] = None,
+    parser_policy: Optional[OutputParserPolicy] = None
 ) -> CompiledGraph:
-    """Compiles a cyclic ReAct (Reasoning + Tool Acting) Agent using StateGraph with dual-name alias resolution."""
+    """Compiles a cyclic ReAct Agent using StateGraph with strict alias collision checks and normalization."""
     normalized_tools: List[Tool] = []
     for t in tools:
         if isinstance(t, Tool):
@@ -75,29 +90,36 @@ def create_react_agent(
             t_doc = (getattr(t, "__doc__", "") or f"Tool {t_name}").strip()
             normalized_tools.append(Tool(name=t_name, description=t_doc, func=t))
 
-    # Flexible Tool Registry Supporting Both Exact Name, Function Name & Prefix Aliases
+    # P0-9: Strict Alias Registry
     tools_by_name: Dict[str, Tool] = {}
     for t in normalized_tools:
+        if t.name in tools_by_name:
+            raise DuplicateToolAliasError(f"Duplicate primary tool name '{t.name}' registered.")
         tools_by_name[t.name] = t
-        if hasattr(t, "func") and hasattr(t.func, "__name__"):
-            tools_by_name[t.func.__name__] = t
-        # Prefix mappings
-        if t.name.startswith("termux_"):
-            raw_suffix = t.name.replace("termux_", "")
-            tools_by_name[raw_suffix] = t
-            tools_by_name[f"get_{raw_suffix}"] = t
-            tools_by_name[f"{raw_suffix}_device"] = t
-        else:
-            tools_by_name[f"termux_{t.name}"] = t
-            if t.name.startswith("get_"):
-                tools_by_name[f"termux_{t.name[4:]}"] = t
+
+        for alias in t.aliases:
+            if alias in tools_by_name:
+                raise DuplicateToolAliasError(f"Tool alias conflict: '{alias}' declared by '{t.name}' conflicts with '{tools_by_name[alias].name}'.")
+            tools_by_name[alias] = t
+
+    effective_policy = parser_policy or OutputParserPolicy()
+
+    if system_prompt:
+        effective_system_prompt = system_prompt
+    else:
+        tool_lines = [f"- {t.name}: {t.description}" for t in normalized_tools]
+        effective_system_prompt = (
+            "You are an Android assistant. When asked to perform hardware tasks, use this exact format:\n"
+            "Action: <tool_name>\n"
+            "Action Input: <json_arguments>\n\n"
+            f"Available tools:\n" + "\n".join(tool_lines)
+        )
 
     def agent_node(state: Dict[str, Any]) -> Dict[str, Any]:
         messages = list(state.get("messages", []))
-        if system_prompt and not any(isinstance(m, SystemMessage) for m in messages):
-            messages = [SystemMessage(content=system_prompt)] + messages
+        if effective_system_prompt and not any(isinstance(m, SystemMessage) for m in messages):
+            messages = [SystemMessage(content=effective_system_prompt)] + messages
 
-        # Flexible model execution supporting BaseChatModel, invoke, generate, or callable
         if hasattr(model, "generate"):
             gen_result = model.generate(messages)
             ai_msg = gen_result.message
@@ -116,21 +138,28 @@ def create_react_agent(
         else:
             raise TypeError(f"Unsupported model type: {type(model)}")
 
-        # Fallback ReAct text parser for small edge models without native tool-calling JSON
-        if not ai_msg.tool_calls and ai_msg.content:
-            action_match = re.search(r"Action:\s*([a-zA-Z0-9_-]+)", ai_msg.content)
-            input_match = re.search(r"Action Input:\s*(\{.*?\}|\[.*?\]|[^\n]+)", ai_msg.content, re.DOTALL)
-            if action_match:
-                fn_name = action_match.group(1).strip()
-                raw_args = input_match.group(1).strip() if input_match else "{}"
-                ai_msg.tool_calls = [{
-                    "id": f"call_{len(messages)}",
-                    "type": "function",
-                    "function": {
-                        "name": fn_name,
-                        "arguments": raw_args
-                    }
-                }]
+        raw_response = RawModelResponse(
+            provider="generic",
+            model="agent_model",
+            text=ai_msg.content or "",
+            native_tool_calls=ai_msg.tool_calls
+        )
+        normalized = OutputNormalizer.normalize(raw_response, registered_tool_names=list(tools_by_name.keys()), policy=effective_policy)
+
+        if normalized.type == "tool_call" and normalized.tool_calls:
+            ai_msg.tool_calls = [{
+                "id": tc.id,
+                "type": "function",
+                "function": {
+                    "name": tc.name,
+                    "arguments": json.dumps(tc.arguments, ensure_ascii=False) if isinstance(tc.arguments, dict) else str(tc.arguments)
+                },
+                "_repaired": tc.repaired
+            } for tc in normalized.tool_calls]
+        else:
+            ai_msg.tool_calls = None
+            if normalized.content is not None:
+                ai_msg.content = normalized.content
 
         return {"messages": messages + [ai_msg], "last_ai_message": ai_msg}
 
@@ -148,9 +177,15 @@ def create_react_agent(
 
         for call in tool_calls:
             call_id = call.get("id", "call_id")
+            is_repaired = call.get("_repaired", False)
             func_info = call.get("function", {})
             fn_name = func_info.get("name")
             args_str = func_info.get("arguments", "{}")
+
+            if is_repaired:
+                tool_content = f"Error executing tool '{fn_name}': ToolCallRepairNotAllowedError - Syntax repair is strictly forbidden for hardware actuation."
+                new_tool_messages.append(ToolMessage(content=tool_content, tool_call_id=call_id))
+                continue
 
             if isinstance(args_str, str):
                 try:
@@ -165,14 +200,21 @@ def create_react_agent(
             if fn_name in tools_by_name:
                 try:
                     target_tool = tools_by_name[fn_name]
+
+                    # P0-3: Strict Tool JSON Schema Validation before binding
+                    if isinstance(fn_args, dict) and target_tool.parameters:
+                        validate_tool_arguments(target_tool.parameters, fn_args)
+
+                    # P0-4: Strict Signature Binding (bind() instead of bind_partial())
+                    sig = inspect.signature(target_tool.func)
                     if isinstance(fn_args, dict):
-                        sig = inspect.signature(target_tool.func)
-                        if len(sig.parameters) == 0:
-                            tool_output = target_tool()
-                        else:
-                            tool_output = target_tool(**fn_args)
+                        bound = sig.bind(**fn_args)
+                        bound.apply_defaults()
+                        tool_output = target_tool(*bound.args, **bound.kwargs)
                     else:
-                        tool_output = target_tool(fn_args)
+                        bound = sig.bind(fn_args)
+                        bound.apply_defaults()
+                        tool_output = target_tool(*bound.args, **bound.kwargs)
                     tool_content = str(tool_output)
                 except Exception as ex:
                     tool_content = f"Error executing tool '{fn_name}': {str(ex)}"
