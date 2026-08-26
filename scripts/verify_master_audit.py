@@ -4,7 +4,8 @@
 termux-aichain Master Audit Verifier (scripts/verify_master_audit.py)
 ==============================================================================
 Verifies that termux_aichain_full_source_report.md is byte-for-byte consistent
-with the current repository files and SHA-256 manifests.
+with the current repository files and SHA-256 manifests under the self-hashing
+exclusion policy.
 """
 
 from __future__ import annotations
@@ -43,7 +44,7 @@ def verify_report() -> bool:
         print("[-] FATAL: No manifest table entries found in report.")
         return False
 
-    print(f"[*] Found {len(matches)} manifest entries in report. Validating checksums...")
+    print(f"[*] Found {len(matches)} manifest entries in report. Validating checksums against disk...")
     mismatches = 0
     missing = 0
 
@@ -63,7 +64,7 @@ def verify_report() -> bool:
         print(f"[-] FAILED: {mismatches} mismatches, {missing} missing files.")
         return False
 
-    print(f"[+] SUCCESS: All {len(matches)} manifest entries verified byte-for-byte against disk.")
+    print(f"[+] SUCCESS: All {len(matches)} source manifest entries verified byte-for-byte against disk.")
     return True
 
 if __name__ == "__main__":
