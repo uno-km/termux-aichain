@@ -5,17 +5,17 @@
 | Metric | Value |
 | :--- | :--- |
 | **Release Package** | `termux-aichain v1.0.12rc1` (PyPI) / `v1.0.12-rc.1` (npm) |
-| **Source Commit Tested** | `7dd2a38ebe0e26521a628887fb7a1c90a331bbe9` |
-| **Source Tree Tested** | `b6c0f52c7cc0fad936850ae87a7ac8ffdd98b635` |
-| **Working Tree State at Test** | `DIRTY` |
+| **Source Commit Tested** | `b66f1d51ed8fecb30cc38aaf8680a942f15a781b` |
+| **Source Tree Tested** | `6be6694278de9c522cae00dccdf8166713741ba4` |
+| **Working Tree State at Test** | `CLEAN` |
 | **TypeScript to ESM Drift** | `ZERO-DRIFT (Validated by git diff)` |
 | **Execution Platform** | `Windows-10-10.0.19045-SP0` |
-| **Python Test Suite** | `136/136 PASSED` in `10.09s` (Exit Code: `0`) |
-| **Node.js Test Suite** | `17/17 PASSED` in `552.98ms` (Exit Code: `0`) |
+| **Python Test Suite** | `136/136 PASSED` in `11.8s` (Exit Code: `0`) |
+| **Node.js Test Suite** | `17/17 PASSED` in `432.92ms` (Exit Code: `0`) |
 | **Verified Test Scope** | **`153 / 153 passed with 0 observed failures or errors`** |
 | **Tracked Source Manifest Files** | `153` files (Self-hashing excluded) |
 | **Extracted Source Code Files** | `149` text files |
-| **Audit Verification Date** | `2026-08-26T16:17:25Z` |
+| **Audit Verification Date** | `2026-08-26T16:24:38Z` |
 
 > [!NOTE]
 > **Formal Audit Status: Release Candidate (RC)**
@@ -60,7 +60,7 @@
 | 3 | `.gitignore` | 568 | `3331f2f309fc3de11c17a76904eb12dd5fdad0bd01e36502238b6ac50d325afc` | Source / Text |
 | 4 | `CHANGELOG.md` | 3,163 | `42b8749bde9a09cdb2fe01460ba2c585f407107fbbb30f4e56d0a98d006b77b7` | Source / Text |
 | 5 | `LICENSE` | 768 | `d52e1a01013d619244868d7c04064de43818321ae72978ff6b8453b18eed8df2` | Source / Text |
-| 6 | `README.md` | 18,384 | `c6a2c8b763ca2bd782d9e8c2907fa7e84c953c1e4786530294989f6774815129` | Source / Text |
+| 6 | `README.md` | 20,111 | `77b68f552d292c6928fb192bab992e1673917b54d93bf5884b1f61a1d626134a` | Source / Text |
 | 7 | `RELEASE_NOTES.md` | 3,484 | `a575dfaa599438f2a1755754699a07ea875b9dc772e776ae80315fb847ec558e` | Source / Text |
 | 8 | `audit_report.json` | 3,967 | `75e09a583d9cddc322af03e69b7a1c592609589b8270c2676c4feee1a6c5f020` | Source / Text |
 | 9 | `docs/advanced-parameters.html` | 4,469 | `6094ef693e162c95af5532504a0996f606ebfb865af18f7eb53f24f23ccbabf1` | Source / Text |
@@ -522,8 +522,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 4.6. File: `README.md`
 - **Path**: `README.md`
-- **Size**: 18,384 bytes (332 lines)
-- **SHA-256**: `c6a2c8b763ca2bd782d9e8c2907fa7e84c953c1e4786530294989f6774815129`
+- **Size**: 20,111 bytes (438 lines)
+- **SHA-256**: `77b68f552d292c6928fb192bab992e1673917b54d93bf5884b1f61a1d626134a`
 
 ````md
 # Termux-AIChain
@@ -566,13 +566,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 <br/>
 
-**[Official Documentation Site](https://uno-km.vercel.app/lib/aichain/)** • **[AMEVA Foundation](https://uno-km.vercel.app/foundation/)** • **[Installation](#1-quick-installation)** • **[Architecture](#2-why-termux-aichain-architectural-pillars)** • **[Recipes & Manual](#3-comprehensive-usage-recipes--manual)** • **[Parameters](#4-hardware-tuning--sampling-parameters)** • **[Benchmarks](#5-empirical-benchmarks-galaxy-s20)**
+**[Official Documentation Site](https://uno-km.vercel.app/lib/aichain/)** • **[AMEVA Foundation](https://uno-km.vercel.app/foundation/)** • **[Python Guide](#-python-quickstart)** • **[Node.js Guide](#-nodejs--typescript-quickstart)** • **[Termux Setup](#-android-termux-setup)** • **[10 Copy-Paste Recipes](#-10-copy-paste-production-recipes)** • **[Hardware Tuning](#-hardware-tuning--sampling-parameters)** • **[Benchmarks](#-empirical-benchmarks-galaxy-s20)**
 
 </div>
 
 ---
 
-## AMEVA Foundation — Sovereign Mobile AI Ecosystem
+## 🌐 AMEVA Foundation — Sovereign Mobile AI Ecosystem
 
 > **"$0 Cloud Cost, 0% External Data Egress. Turning every Android smartphone into a sovereign autonomous AI workstation."**  
 > The **AMEVA Open-Source Foundation (AOSF)** builds next-generation, client-centric AI runtimes spanning on-device large models, browser automation, neural network training, speech-to-text, and autonomous agent chaining.
@@ -588,78 +588,107 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## 1. Quick Installation
-
-### Option A: One-Touch Python Setup (Recommended)
-```bash
-pip install --upgrade termux-aichain
-termux-aichain install
-```
-> `termux-aichain install` automatically provisions all necessary Termux system packages (`termux-api`, `ffmpeg`, `git`, `nodejs-lts`) in a single step with zero manual configuration.
-
-### Option B: 1-Line Bootstrap Script (Android Termux)
-```bash
-curl -sSL https://raw.githubusercontent.com/uno-km/termux-aichain/main/scripts/install.sh | bash
-```
-
-### Option C: Node.js / TypeScript SDK (npm)
-```bash
-npm install termux-aichain
-```
-
-## 2. Why Termux-AIChain? Architectural Pillars
+## ⚡ Architectural Pillars
 
 ### 1. Zero-Heavy-Dependency Doctrine
 - Standard edge AI libraries (LangChain, LlamaIndex, CrewAI) introduce 40~80 heavy dependencies (Pydantic, NumPy, aiohttp, requests, tenacity), resulting in 200MB+ memory baselines and frequent C-compilation failures on Android Bionic ARM64.
 - `termux-aichain` is written strictly with the **Python 3.10+ Standard Library** (`urllib`, `sqlite3`, `subprocess`, `json`, `math`, `typing`, `http.server`) and **Pure Node.js 18+ ESM** (`http`, `node:sqlite`, `node:test`).
 - **Cold start import latency is 12.8ms**, and total package disk footprint is under **268KB**.
 
-### 2. Native StateGraph & ReAct Engine
-- Deterministic cyclic state machines with entry points, explicit edges, conditional routing, and `max_iterations` recursion safety limits.
-- Built-in `create_react_agent` factory for autonomous tool-calling loops without heavy orchestrator overhead.
+### 2. Dual-Engine Native Parity (Python Stdlib + Node.js ESM)
+- 100% equivalent API contracts between Python and JavaScript/TypeScript: `LocalAgent`, `StateGraph`, `create_react_agent`, `ToolPolicy`, Vector Store, Memory Buffer, and 1-Line HTTP/SSE Serving.
 
-### 3. Full-Spectrum Local Server Hardware Fine-Tuning
-- Direct lifecycle management and parameter injection for `llama-server` and `BitNet.cpp`.
-- 12 hardware flags exposed: `threads`, `n_ctx`, `n_batch`, `n_ubatch`, `n_gpu_layers`, `flash_attn`, `cache_type_k` (q8_0/q4_0), `cache_type_v`, `mlock`, `cont_batching`, `rope_freq_scale`.
+### 3. Fail-Closed Identity Verification & Capability Profiling
+- `ServerIdentityVerifier` automatically identifies local inference engines (`termux-aichain`, `llama-server`, `BitNet.cpp`, `OpenAI`).
+- When `/health` returns generic status, capability fallback queries `/v1/models` to ensure model identity matches before dispatching sensitive device actions.
 
-### 4. SQLite ACID Long-Term Memory & Pure Cosine Vector RAG
-- Persistent entity key-value storage and vector similarity search built on native SQLite.
-- Pure Python and Pure JavaScript algebraic vector dot product and cosine normalization without ChromaDB or NumPy.
-
-### 5. Native Android Hardware Actuation & Ecosystem Integration
-- Built-in tool wrappers for Termux:API (`battery`, `sensor`, `gps`, `vibrate`, `notification`, `tts`, `shell`).
-- Three-tier fallback: Automatically queries `/sys/class/power_supply/battery` and `/sys/devices/virtual/thermal` directly from kernel sysfs if `termux-api` is absent.
-- Direct ecosystem hooks for `termux-stt` (voice STT), `termux-diffusion` (image rendering), and `termux-playwright` (headless web scraping).
+### 4. Default-Deny Tool Authorization Policy
+- All tools execute under `ToolPolicy(default="deny")` with JSON Schema bounds validation and optional asynchronous user approval callbacks.
 
 ---
 
-## 3. Comprehensive Usage Recipes & Manual
+## 🐍 Python Quickstart
 
-### Recipe 1: 1-Line Local LLM / BitNet LCEL Pipe Chaining
+### Installation (pip)
+```bash
+pip install --upgrade termux-aichain
+```
+
+### 10-Second Hello Agent
+```python
+from termux_aichain import LocalAgent
+
+# Connects to local llama-server or OpenAI-compatible backend
+agent = LocalAgent.local(model="qwen2.5-1.5b")
+response = agent.run("Hello! Introduce yourself in one concise sentence.")
+print(response)
+```
+
+---
+
+## 🟩 Node.js / TypeScript Quickstart
+
+### Installation (npm)
+```bash
+npm install termux-aichain
+```
+
+### 10-Second Hello Agent (ESM)
+```javascript
+import { LocalAgent } from "termux-aichain";
+
+// Connects to local llama-server or OpenAI-compatible backend
+const agent = await LocalAgent.local("qwen2.5-1.5b");
+const response = await agent.run("Hello! Introduce yourself in one concise sentence.");
+console.log(response);
+```
+
+---
+
+## 📱 Android Termux Setup
+
+### Option A: One-Touch Python Setup (Recommended)
+```bash
+pip install --upgrade termux-aichain
+termux-aichain install
+```
+> `termux-aichain install` automatically provisions all necessary Termux packages (`termux-api`, `ffmpeg`, `git`, `nodejs-lts`) in a single step with zero manual configuration.
+
+### Option B: 1-Line Bootstrap Script (Termux Bash)
+```bash
+curl -sSL https://raw.githubusercontent.com/uno-km/termux-aichain/main/scripts/install.sh | bash
+```
+
+---
+
+## 📋 10 Copy-Paste Production Recipes
+
+### [Python] Recipe 1: 1-Line Local LLM / BitNet LCEL Pipe Chaining
 
 ```python
 from termux_aichain import PromptTemplate, JsonOutputParser, OpenAICompatibleChat
 
 # 1. Define prompt template and JSON output parser
 prompt = PromptTemplate.from_template(
-    "Extract structured system status from log:
-{log}
-Respond in JSON with fields 'level', 'code', 'message'."
+    "Extract structured system status from log:\n{log}\n"
+    "Respond in strict JSON with fields 'level', 'code', 'message'."
 )
 parser = JsonOutputParser()
 
 # 2. Connect to local llama-server / BitNet endpoint
 llm = OpenAICompatibleChat(base_url="http://127.0.0.1:8080/v1", temperature=0.1)
 
-# 3. Assemble LCEL pipe chain
+# 3. Assemble LCEL pipe chain (zero external dependencies)
 chain = prompt | llm | parser
 
 # 4. Execute synchronously
 result = chain.invoke({"log": "CRITICAL: Kernel thermal throttling triggered at 48C (Code 104)"})
-print("Parsed JSON Result:", result)
+print("Parsed JSON Output:", result)
 ```
 
-### Recipe 2: Autonomous ReAct Multi-Agent with StateGraph
+---
+
+### [Python] Recipe 2: Autonomous ReAct Multi-Agent with StateGraph & Hardware Actuation
 
 ```python
 from termux_aichain import (
@@ -671,7 +700,7 @@ from termux_aichain import (
     transcribe_speech
 )
 
-# 1. Initialize local brain
+# 1. Initialize local engine
 model = BitNetChat(base_url="http://127.0.0.1:8080/v1", temperature=0.1)
 
 # 2. Construct autonomous ReAct agent with hardware tools
@@ -686,10 +715,12 @@ state = agent.invoke({
     "messages": [HumanMessage(content="Check battery percentage and vibrate device for 500ms if battery > 50%.")]
 })
 
-print("Agent Final Response:", state["messages"][-1].content)
+print("Agent Final Output:", state["messages"][-1].content)
 ```
 
-### Recipe 3: SQLite Long-Term Memory & Cosine Vector Store
+---
+
+### [Python] Recipe 3: SQLite ACID Long-Term Memory & Pure Cosine Vector RAG
 
 ```python
 from termux_aichain import SQLiteEntityMemory, SQLiteVectorStore
@@ -713,7 +744,9 @@ matches = vector_store.similarity_search_by_vector([0.90, 0.40, 0.00], k=1)
 print("Top RAG Match:", matches[0].page_content, f"(Score: {matches[0].score:.4f})")
 ```
 
-### Recipe 4: 1-Line REST, SSE Streaming Server & Web Dashboard
+---
+
+### [Python] Recipe 4: 1-Line REST & SSE Streaming Agent Server
 
 ```python
 from termux_aichain import create_react_agent, OpenAICompatibleChat, serve, get_battery_status
@@ -721,11 +754,13 @@ from termux_aichain import create_react_agent, OpenAICompatibleChat, serve, get_
 llm = OpenAICompatibleChat(base_url="http://127.0.0.1:8080/v1")
 agent = create_react_agent(model=llm, tools=[get_battery_status])
 
-# Starts REST API (POST /v1/agent/invoke, POST /v1/agent/stream) and Web Dashboard UI
-serve(agent, host="0.0.0.0", port=8000)
+# Starts REST API (POST /invoke, POST /stream) and Web Dashboard UI on localhost
+serve(agent, host="127.0.0.1", port=8000)
 ```
 
-### Recipe 5: Full Multimodal Pipeline (STT + Diffusion + Playwright + Haptic)
+---
+
+### [Python] Recipe 5: Full Multimodal Ecosystem Pipeline (STT + Diffusion + Playwright)
 
 ```python
 from termux_aichain import (
@@ -756,46 +791,117 @@ agent = create_react_agent(
 state = agent.invoke({
     "messages": [HumanMessage(content="Transcribe speech from meeting.wav, search local weather, generate an emblem image, and vibrate.")]
 })
-```
-
-### Recipe 6: Node.js ESM Native Autonomous Agent
-
-```javascript
-import {
-  PromptTemplate,
-  JsonOutputParser,
-  OpenAICompatibleChat,
-  StateGraph,
-  START,
-  END,
-  MicroVectorStore,
-  getDefaultDeviceTools
-} from "termux-aichain";
-
-// 1. In-Memory Micro Vector Store
-const vectorStore = new MicroVectorStore();
-vectorStore.addTexts(
-  ["Linux Kernel Bionic", "ARM NEON SIMD"],
-  [[1.0, 0.0], [0.0, 1.0]]
-);
-
-const matches = vectorStore.similaritySearchByVector([0.98, 0.02], 1);
-console.log("Vector Match:", matches[0].content, `(Score: ${matches[0].score.toFixed(4)})`);
-
-// 2. Cyclic StateGraph Compilation
-const workflow = new StateGraph();
-workflow.addNode("counter", (state) => ({ step: (state.step || 0) + 1 }));
-workflow.setEntryPoint("counter");
-workflow.addConditionalEdges("counter", (state) => (state.step >= 3 ? END : "counter"));
-
-const app = workflow.compile();
-const result = await app.invoke({ step: 0 });
-console.log("Graph Execution Result:", result);
+print("Multimodal Result:", state["messages"][-1].content)
 ```
 
 ---
 
-## 4. Hardware Tuning & Sampling Parameters
+### [Node.js] Recipe 6: 1-Line LocalAgent Facade & Automatic Verification
+
+```javascript
+import { LocalAgent } from "termux-aichain";
+
+// Automatically verifies server capability, protocol, and model ID
+const agent = await LocalAgent.local("qwen2.5-1.5b", {
+  endpoint: "http://127.0.0.1:8080"
+});
+
+const result = await agent.run("Summarize key advantages of on-device AI in 3 bullet points.");
+console.log(result);
+```
+
+---
+
+### [Node.js] Recipe 7: Cyclic StateGraph Machine & Conditional Branching
+
+```javascript
+import { StateGraph, START, END } from "termux-aichain";
+
+const workflow = new StateGraph();
+
+workflow.addNode("step_a", async (state) => {
+  console.log(`[Node A] Count: ${state.count}`);
+  return { count: state.count + 1 };
+});
+
+workflow.setEntryPoint("step_a");
+workflow.addConditionalEdges("step_a", (state) => (state.count >= 3 ? END : "step_a"));
+
+const app = workflow.compile();
+const finalState = await app.invoke({ count: 0 });
+console.log("Graph Complete:", finalState);
+```
+
+---
+
+### [Node.js] Recipe 8: In-Memory MicroVectorStore Similarity Search
+
+```javascript
+import { MicroVectorStore } from "termux-aichain";
+
+const vectorStore = new MicroVectorStore();
+
+vectorStore.addTexts(
+  ["Linux Kernel Bionic Architecture", "ARM NEON SIMD Assembly", "WebGPU Compute Shaders"],
+  [
+    [0.95, 0.10, 0.05],
+    [0.85, 0.40, 0.10],
+    [0.05, 0.15, 0.98]
+  ]
+);
+
+const matches = vectorStore.similaritySearchByVector([0.90, 0.20, 0.05], 1);
+console.log("Top Vector Match:", matches[0].content, `(Score: ${matches[0].score.toFixed(4)})`);
+```
+
+---
+
+### [Node.js] Recipe 9: 1-Line REST & SSE Streaming Server
+
+```javascript
+import { serve, PromptTemplate } from "termux-aichain";
+
+const prompt = PromptTemplate.fromTemplate("Echo and analyze: {msg}");
+
+// Serves POST /invoke and POST /stream with loopback CORS protection
+const server = serve(prompt, {
+  host: "127.0.0.1",
+  port: 8080,
+  apiKey: "optional_secret_token"
+});
+```
+
+---
+
+### [Node.js] Recipe 10: Android Native Hardware Actuation Tools
+
+```javascript
+import {
+  getBatteryStatus,
+  getSensorData,
+  getDeviceLocation,
+  vibrateDevice,
+  sendNotification
+} from "termux-aichain";
+
+// 1. Read battery percentage (CLI or kernel sysfs fallback)
+const battery = await getBatteryStatus.func();
+console.log("Battery Status:", battery);
+
+// 2. Vibrate device for 300ms
+await vibrateDevice.func({ duration_ms: 300 });
+
+// 3. Dispatch Android Notification
+await sendNotification.func({
+  title: "AI Workstation",
+  content: "Autonomous task execution completed successfully.",
+  priority: "high"
+});
+```
+
+---
+
+## 🛠️ Hardware Tuning & Sampling Parameters
 
 ### 12 Hardware Tuning Flags (`LocalServerConfig`)
 
@@ -829,7 +935,7 @@ console.log("Graph Execution Result:", result);
 
 ---
 
-## 5. Empirical Benchmarks (Galaxy S20)
+## 📊 Empirical Benchmarks (Galaxy S20)
 
 Measured on physical mobile hardware (Samsung Galaxy S20 5G, Qualcomm Snapdragon 865, 12GB RAM, Android 13 Termux):
 
@@ -844,7 +950,7 @@ Measured on physical mobile hardware (Samsung Galaxy S20 5G, Qualcomm Snapdragon
 
 ---
 
-## 6. Audit & Verification Summary
+## 🔒 Audit & Verification Summary
 
 - **Verification Scope**: 153/153 automated tests passed with zero observed failures or errors in the verified test scope (136 Python tests, 17 Node.js tests).
 - **TypeScript Zero-Drift**: Full compilation parity between `js/src/**/*.ts` SSOT and `js/esm/` release output.
@@ -852,7 +958,7 @@ Measured on physical mobile hardware (Samsung Galaxy S20 5G, Qualcomm Snapdragon
 
 ---
 
-## 7. License & Compliance
+## 📜 License & Compliance
 
 - **License**: Apache License 2.0 (`Apache-2.0`).
 - **Official Documentation Portal**: [https://uno-km.vercel.app/lib/aichain/](https://uno-km.vercel.app/lib/aichain/)
