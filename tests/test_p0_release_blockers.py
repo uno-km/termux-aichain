@@ -1,6 +1,8 @@
 import os
 import time
 import math
+import json
+import unittest.mock
 import pytest
 from termux_aichain import (
     LocalAgent,
@@ -374,3 +376,139 @@ def test_vector_search_bounded_heap():
     results = vstore.similarity_search_by_vector([25.0, 25.0], k=3)
     assert len(results) == 3
     vstore.close()
+
+# 28. status:ok 미식별 서버는 openai-compatible로 분류되며 llama-server로 오인하지 않음 (P0-3)
+def test_unknown_server_status_ok_is_openai_compatible_not_llama(monkeypatch):
+    class FakeGenericResp:
+        status = 200
+        def read(self, limit):
+            return b'{"status": "ok"}'
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+
+    monkeypatch.setattr("urllib.request.OpenerDirector.open", lambda self, req, timeout: FakeGenericResp())
+    payload = ServerIdentityVerifier.verify("http://127.0.0.1:8080")
+    assert payload["service"] == "openai-compatible"
+
+    # expected_service="llama-server" 지정 시 불일치로 거부
+    with pytest.raises(ServerProtocolMismatchError) as exc:
+        ServerIdentityVerifier.verify("http://127.0.0.1:8080", expected_service="llama-server")
+    assert "Service mismatch" in str(exc.value)
+
+# 29. expected_model_id 지정 + 서버 model ID 누락 시 fail-closed (P0-2)
+def test_expected_model_id_missing_fails_closed(monkeypatch):
+    class FakeNoModelResp:
+        status = 200
+        def read(self, limit):
+            return b'{"status": "ok", "service": "termux-aichain"}'
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+
+    monkeypatch.setattr("urllib.request.OpenerDirector.open", lambda self, req, timeout: FakeNoModelResp())
+    with pytest.raises(ModelIdentityMismatchError) as exc:
+        ServerIdentityVerifier.verify("http://127.0.0.1:8080", expected_model_id="qwen-2.5-1.5b")
+    assert "Expected model ID was configured, but the server did not provide model identity" in str(exc.value)
+
+# 30. expected_model_sha256 지정 + 서버 checksum 누락 시 fail-closed (P0-2)
+def test_expected_model_sha256_missing_fails_closed(monkeypatch):
+    class FakeNoChecksumResp:
+        status = 200
+        def read(self, limit):
+            return b'{"status": "ok", "service": "termux-aichain", "model": {"id": "qwen-2.5-1.5b"}}'
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+
+    monkeypatch.setattr("urllib.request.OpenerDirector.open", lambda self, req, timeout: FakeNoChecksumResp())
+    with pytest.raises(ModelIdentityMismatchError) as exc:
+        ServerIdentityVerifier.verify("http://127.0.0.1:8080", expected_model_sha256="abcdef123456")
+    assert "Expected model SHA-256 was configured, but the server did not provide a checksum" in str(exc.value)
+
+# 31. managed OWNED 생성 성공 및 status.runtime_ownership == OWNED (P0-1)
+def test_managed_owned_lifecycle_and_status(monkeypatch, tmp_path):
+    model_file = tmp_path / "qwen2.5.gguf"
+    model_file.write_text("model_data")
+
+    # Fake server health check & spawn
+    class FakeResp:
+        status = 200
+        def read(self, limit):
+            return b'{"status": "ok", "service": "llama-server", "protocolVersion": "1.0", "model": {"id": "qwen2.5.gguf"}}'
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+
+    monkeypatch.setattr("urllib.request.OpenerDirector.open", lambda self, req, timeout: FakeResp())
+    monkeypatch.setattr("shutil.which", lambda bin_name: "/usr/bin/" + bin_name)
+    monkeypatch.setattr("subprocess.Popen", lambda *args, **kwargs: unittest.mock.MagicMock(pid=9999, poll=lambda: None))
+
+    agent = LocalAgent(
+        mode="managed",
+        chat_model=unittest.mock.MagicMock(),
+        tools=[],
+        owns_managed_process=True,
+        runtime_ownership="OWNED"
+    )
+    try:
+        st = agent.status()
+        assert st["runtime_ownership"] == "OWNED"
+        assert st["mode"] == "managed"
+    finally:
+        agent.close()
+
+# 32. managed ATTACHED 생성 성공 및 close 시 외부 자원 보존 (P0-1)
+def test_managed_attached_lifecycle_preserves_external(monkeypatch, tmp_path):
+    lock_file = tmp_path / "server.lock"
+    lock_file.write_text(json.dumps({"pid": 8888, "endpoint": "http://127.0.0.1:8080", "created_at": time.time()}))
+
+    agent = LocalAgent(
+        mode="managed",
+        chat_model=unittest.mock.MagicMock(),
+        tools=[],
+        lock_file_path=lock_file,
+        owns_managed_process=False,
+        owns_identity_lock=False,
+        runtime_ownership="ATTACHED"
+    )
+    st = agent.status()
+    assert st["runtime_ownership"] == "ATTACHED"
+    agent.close()
+    # Lock file must remain preserved since agent was attached, not owned
+    assert lock_file.exists()
+
+# 33. BoundedRingLog 단일 초대형 로그 행(100KB) 상한 및 바이트 보장 (P0-2)
+def test_ring_log_single_oversized_line_is_bounded():
+    from termux_aichain.core.providers.local_server import BoundedRingLog
+    log = BoundedRingLog(maxlen=200, max_bytes=65536)
+    log.append("A" * 100_000)
+    assert log._current_bytes <= 65536
+    total_bytes = sum(len(line.encode("utf-8")) for line in log.lines)
+    assert total_bytes <= 65536
+
+# 34. managed 시작 실패 시 UnboundLocalError 없이 원본 예외 보존 (P0-3)
+def test_managed_start_failure_preserves_original_error(monkeypatch, tmp_path):
+    model = tmp_path / "model.gguf"
+    model.write_bytes(b"model-data")
+    monkeypatch.setattr("shutil.which", lambda name: f"/fake/{name}")
+
+    def fail_start(self, *args, **kwargs):
+        raise OSError("popen failed to execute binary")
+
+    monkeypatch.setattr(
+        "termux_aichain.core.providers.local_server.LocalServerManager.start",
+        fail_start,
+    )
+    with pytest.raises(OSError, match="popen failed to execute binary"):
+        LocalAgent.create(
+            mode="managed",
+            model_path=str(model)
+        )
+
+# 35. CORS scheme 및 userinfo 엄격 거부 (P1-3)
+def test_cors_scheme_and_userinfo_rejected():
+    from termux_aichain.serve.server import is_allowed_loopback_origin
+    assert is_allowed_loopback_origin("http://localhost:3000") is True
+    assert is_allowed_loopback_origin("http://127.0.0.1:8080") is True
+    assert is_allowed_loopback_origin("ftp://localhost") is False
+    assert is_allowed_loopback_origin("file://localhost/foo") is False
+    assert is_allowed_loopback_origin("http://admin:pass@localhost:3000") is False
+    assert is_allowed_loopback_origin("http://localhost.evil.example") is False
+    assert is_allowed_loopback_origin("") is False

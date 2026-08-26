@@ -70,7 +70,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
   <header>
     <h1><span>termux-aichain</span> <span style="color:var(--text-muted); font-size:0.8rem;">Live Monitor</span></h1>
     <div class="status-bar">
-      <span>Engine: <span class="badge">v0.1.0 Sovereign</span></span>
+      <span>Engine: <span class="badge">v1.0.12rc1 Sovereign</span></span>
       <span>RAM Footprint: <span class="badge">&lt; 10MB Base</span></span>
       <span>Mode: <span class="badge" style="color:var(--success);">REST & SSE Active</span></span>
     </div>
@@ -211,14 +211,13 @@ DASHBOARD_HTML = """<!DOCTYPE html>
       const tb = document.getElementById("traceTableBody");
       const tr = document.createElement("tr");
       const ts = new Date().toLocaleTimeString();
-      tr.innerHTML = `
-        <td>${ts}</td>
-        <td>${name}</td>
-        <td>${latencyMs} ms</td>
-        <td>${tokens}</td>
-        <td>${tps}</td>
-        <td style="color:var(--success);">OK</td>
-      `;
+      const cells = [ts, name, latencyMs + " ms", String(tokens), String(tps), "OK"];
+      cells.forEach((text, i) => {
+        const td = document.createElement("td");
+        td.textContent = text;
+        if (i === 5) td.style.color = "var(--success)";
+        tr.appendChild(td);
+      });
       tb.insertBefore(tr, tb.firstChild);
     }
 
@@ -231,14 +230,20 @@ DASHBOARD_HTML = """<!DOCTYPE html>
           tb.innerHTML = "";
           data.forEach(item => {
             const tr = document.createElement("tr");
-            tr.innerHTML = `
-              <td>${item.timestamp || "Now"}</td>
-              <td>${item.name}</td>
-              <td>${item.duration_ms} ms</td>
-              <td>${item.tokens || "-"}</td>
-              <td>${item.tps || "-"}</td>
-              <td style="color:${item.error ? "var(--warning)" : "var(--success)"};">${item.error ? "ERROR" : "OK"}</td>
-            `;
+            const cells = [
+              item.timestamp || "Now",
+              item.name || "Trace",
+              (item.duration_ms || 0) + " ms",
+              String(item.tokens || "-"),
+              String(item.tps || "-"),
+              item.error ? "ERROR" : "OK"
+            ];
+            cells.forEach((text, i) => {
+              const td = document.createElement("td");
+              td.textContent = text;
+              if (i === 5) td.style.color = item.error ? "var(--warning)" : "var(--success)";
+              tr.appendChild(td);
+            });
             tb.appendChild(tr);
           });
         }

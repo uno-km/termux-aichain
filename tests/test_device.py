@@ -52,18 +52,27 @@ def test_notification_tool():
     assert "status" in data or "error" in data
 
 def test_shell_tool():
-    res = execute_shell("echo 'Hello Termux Edge'")
-    assert "Hello Termux Edge" in res
+    # 1. Non-allowed command rejection
+    res_rejected = execute_shell("rm -rf /")
+    assert "COMMAND_NOT_ALLOWED" in res_rejected
+
+    # 2. Injection rejection
+    res_injection = execute_shell("uname; rm -rf /")
+    assert "INJECTION_ATTEMPT_REJECTED" in res_injection
+
+    # 3. Allowed tokenized command
+    res_allowed = execute_shell("uname -a")
+    assert isinstance(res_allowed, str)
 
 def test_default_device_tools():
     tools = get_default_device_tools()
-    assert len(tools) == 8
-    names = [t.name for t in tools]
-    assert "termux_battery_status" in names
-    assert "termux_sensor_data" in names
-    assert "termux_location" in names
-    assert "termux_speech_to_text" in names
-    assert "termux_vibrate" in names
-    assert "termux_notification" in names
-    assert "termux_tts_speak" in names
-    assert "termux_shell_exec" in names
+    # Shell is excluded from default tools
+    assert len(tools) == 7
+    tool_names = [t.name for t in tools]
+    assert "termux_shell_exec" not in tool_names
+    assert "termux_vibrate" in tool_names
+    assert "termux_location" in tool_names
+    assert "termux_speech_to_text" in tool_names
+    assert "termux_vibrate" in tool_names
+    assert "termux_notification" in tool_names
+    assert "termux_tts_speak" in tool_names

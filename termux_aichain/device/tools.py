@@ -256,23 +256,59 @@ def speak_tts(text: str) -> str:
         "message": "termux-tts-speak not found. Install termux-api to enable text-to-speech."
     })
 
+# Safe tokenized commands allowlist for explicit opt-in shell tool
+SAFE_COMMAND_ALLOWLIST = {
+    "termux-battery-status", "termux-sensor", "termux-location",
+    "termux-speech-to-text", "termux-vibrate", "termux-notification",
+    "termux-tts-speak", "termux-torch", "termux-volume",
+    "uname", "uptime", "whoami", "pwd", "date", "ps"
+}
+
 @tool(
     name="termux_shell_exec",
-    description="Executes a shell command in the local Termux environment safely.",
+    description="[DANGEROUS / REQUIRES EXPLICIT APPROVAL] Executes a tokenized, non-shell command from the strict allowlist.",
     parameters={
         "type": "object",
         "properties": {
-            "command": {"type": "string", "description": "Shell command line to execute"}
+            "command": {
+                "type": "string",
+                "description": "Allowed executable command token (e.g. 'uname -a', 'uptime', 'termux-torch on')"
+            }
         },
         "required": ["command"]
     }
 )
 def execute_shell(command: str) -> str:
-    """Executes arbitrary shell command."""
+    """Executes a strictly tokenized command (shell=False) against the safe allowlist."""
+    if not isinstance(command, str) or not command.strip():
+        return json.dumps({"error": "INVALID_COMMAND", "message": "Command must be a non-empty string."})
+
+    # Reject shell metacharacters to prevent injection
+    forbidden_chars = [";", "&&", "||", "|", "`", "$", ">", "<", "\n", "\r"]
+    for ch in forbidden_chars:
+        if ch in command:
+            return json.dumps({"error": "INJECTION_ATTEMPT_REJECTED", "message": f"Shell metacharacter '{ch}' is strictly forbidden."})
+
+    import shlex
+    try:
+        tokens = shlex.split(command.strip())
+    except Exception as ex:
+        return json.dumps({"error": "PARSE_ERROR", "message": f"Failed to tokenize command: {str(ex)}"})
+
+    if not tokens:
+        return json.dumps({"error": "EMPTY_COMMAND", "message": "Parsed command tokens are empty."})
+
+    executable = tokens[0]
+    if executable not in SAFE_COMMAND_ALLOWLIST:
+        return json.dumps({
+            "error": "COMMAND_NOT_ALLOWED",
+            "message": f"Executable '{executable}' is not in the safe command allowlist. Allowed: {sorted(SAFE_COMMAND_ALLOWLIST)}"
+        })
+
     try:
         res = subprocess.run(
-            command,
-            shell=True,
+            tokens,
+            shell=False,
             capture_output=True,
             text=True,
             timeout=10.0
@@ -288,7 +324,7 @@ def execute_shell(command: str) -> str:
         return f"Failed to execute command: {str(ex)}"
 
 def get_default_device_tools() -> List[Tool]:
-    """Returns the comprehensive suite of standard Termux/Android device tools."""
+    """Returns the safe suite of standard Termux/Android device tools (excludes raw shell)."""
     return [
         get_battery_status,
         get_sensor_data,
@@ -297,5 +333,4 @@ def get_default_device_tools() -> List[Tool]:
         vibrate_device,
         send_notification,
         speak_tts,
-        execute_shell,
     ]

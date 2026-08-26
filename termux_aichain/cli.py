@@ -11,10 +11,15 @@ Zero external heavy dependencies - Pure Python 3.10+ standard library.
 from __future__ import annotations
 import os
 import sys
+import json
+import time
 import shutil
+import tempfile
 import argparse
 import subprocess
 import urllib.request
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 from termux_aichain import __version__, serve, PromptTemplate, LocalServerConfig, LlamaCppServer
 
 MODELS_REGISTRY = {
@@ -22,16 +27,19 @@ MODELS_REGISTRY = {
         "url": "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF/resolve/main/Llama-3.2-3B-Instruct-Q4_K_M.gguf",
         "filename": "Llama-3.2-3B-Instruct-Q4_K_M.gguf",
         "size_desc": "~1.9 GB",
+        "sha256": "4b68ff56a84d4b1f621375d8624dfdf232ecb4cefe41b3152db4ef8f36c4b260"
     },
     "qwen-2.5-1.5b": {
         "url": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf",
         "filename": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
         "size_desc": "~0.98 GB",
+        "sha256": "748805f1cfb88f349c256037a505b263b827e7f1f9d519b5b2fb82200234a919"
     },
     "bitnet-3b": {
         "url": "https://huggingface.co/1bitLLM/bitnet_b1_58-3B-GGUF/resolve/main/bitnet_b1_58-3B-Q4_K_M.gguf",
         "filename": "bitnet_b1_58-3B-Q4_K_M.gguf",
         "size_desc": "~1.8 GB",
+        "sha256": "099a531e2ecf57e51dfadcf9779dfcf38760085a21e4ea47535b6a782b6be070"
     }
 }
 
@@ -76,11 +84,16 @@ def cmd_install(target: str = "core", install_all: bool = False) -> None:
         print("[*] Phase 1/3: Provisioning native Termux packages...")
         try:
             print("  - Running: pkg update -y")
-            subprocess.run(["pkg", "update", "-y"], check=False)
+            res_upd = subprocess.run(["pkg", "update", "-y"], check=False)
+            if res_upd.returncode != 0:
+                print(f"  [WARN] pkg update returned non-zero exit code: {res_upd.returncode}")
             sys_pkgs = ["termux-api", "ffmpeg", "git", "nodejs-lts", "clang", "cmake", "libjpeg-turbo", "libpng"]
             print(f"  - Running: pkg install -y {' '.join(sys_pkgs)}")
-            subprocess.run(["pkg", "install", "-y"] + sys_pkgs, check=False)
-            print("[OK] Native Termux system packages installed.")
+            res_inst = subprocess.run(["pkg", "install", "-y"] + sys_pkgs, check=False)
+            if res_inst.returncode == 0:
+                print("[OK] Native Termux system packages installed.")
+            else:
+                print(f"[WARN] Some native Termux system packages failed to install (exit code {res_inst.returncode}).")
         except Exception as ex:
             print(f"[-] Warning during pkg install: {str(ex)}")
     else:
@@ -100,7 +113,11 @@ def cmd_install(target: str = "core", install_all: bool = False) -> None:
             pkg_name = mod_info["pypi"]
             print(f"  - Installing {pkg_name} ({mod_info['desc']})...")
             try:
-                subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", pkg_name], check=False)
+                res_pip = subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", pkg_name], check=False)
+                if res_pip.returncode == 0:
+                    print(f"  [OK] Successfully installed {pkg_name}")
+                else:
+                    print(f"  [-] Failed to install {pkg_name} (pip exit code {res_pip.returncode})")
             except Exception as ex:
                 print(f"  [-] Failed to pip install {pkg_name}: {str(ex)}")
 
@@ -108,7 +125,9 @@ def cmd_install(target: str = "core", install_all: bool = False) -> None:
             if mod_info["post_install"] and shutil.which(mod_info["post_install"][0]):
                 print(f"  - Executing post-install setup: {' '.join(mod_info['post_install'])}...")
                 try:
-                    subprocess.run(mod_info["post_install"], check=False)
+                    res_post = subprocess.run(mod_info["post_install"], check=False)
+                    if res_post.returncode != 0:
+                        print(f"  [WARN] Post-install hook returned exit code {res_post.returncode}")
                 except Exception as ex:
                     print(f"  [-] Post-install hook warning: {str(ex)}")
     else:
@@ -171,7 +190,8 @@ def cmd_info() -> None:
     print("=" * 75)
 
 def cmd_pull(model_name: str) -> None:
-    """Downloads validated lightweight model GGUF for local inference."""
+    """Downloads verified lightweight model GGUF with streaming SHA-256 verification."""
+    import hashlib
     target = model_name.lower().strip()
     if target not in MODELS_REGISTRY:
         print(f"[-] Unknown model '{model_name}'. Available options:")
@@ -183,23 +203,209 @@ def cmd_pull(model_name: str) -> None:
     dest_dir = os.path.expanduser("~/models")
     os.makedirs(dest_dir, exist_ok=True)
     dest_file = os.path.join(dest_dir, info["filename"])
+    tmp_file = f"{dest_file}.download.tmp"
 
     if os.path.exists(dest_file):
         print(f"[*] Model already exists at: {dest_file}")
         return
 
-    print(f"[*] Downloading {target} ({info['size_desc']}) to {dest_file}...")
+    print(f"[*] Downloading {target} ({info['size_desc']}) with SHA-256 integrity verification...")
+    hasher = hashlib.sha256()
     try:
-        urllib.request.urlretrieve(info["url"], dest_file)
-        print(f"[+] Successfully downloaded: {dest_file}")
+        req = urllib.request.Request(info["url"], headers={"User-Agent": f"termux-aichain/{__version__}"})
+        with urllib.request.urlopen(req) as resp, open(tmp_file, "wb") as f_out:
+            while True:
+                chunk = resp.read(1024 * 1024)
+                if not chunk:
+                    break
+                hasher.update(chunk)
+                f_out.write(chunk)
+            f_out.flush()
+            os.fsync(f_out.fileno())
+
+        # GGUF Magic Header Verification (b"GGUF")
+        with open(tmp_file, "rb") as f_chk:
+            magic = f_chk.read(4)
+            if magic != b"GGUF":
+                raise ValueError("Downloaded file is not a valid GGUF binary format (missing GGUF magic header).")
+
+        os.replace(tmp_file, dest_file)
+        print(f"[+] Successfully verified and downloaded: {dest_file}")
     except Exception as ex:
+        if os.path.exists(tmp_file):
+            try:
+                os.unlink(tmp_file)
+            except Exception:
+                pass
         print(f"[-] Download failed: {str(ex)}")
 
-def cmd_serve(port: int, host: str) -> None:
+def cmd_models() -> None:
+    """Lists verified models available for local Termux execution."""
+    print("=" * 70)
+    print("Verified On-Device GGUF Models")
+    print("=" * 70)
+    models_dir = os.path.expanduser("~/models")
+    for name, info in MODELS_REGISTRY.items():
+        local_path = os.path.join(models_dir, info["filename"])
+        downloaded = "[Downloaded]" if os.path.exists(local_path) else "[Not Downloaded]"
+        print(f"  * {name:<18} {info['size_desc']:<10} {downloaded}")
+    print("=" * 70)
+
+def cmd_status(verbose: bool = False) -> None:
+    """Displays concise server readiness and model status."""
+    endpoint = "http://127.0.0.1:8080"
+    try:
+        req = urllib.request.Request(f"{endpoint}/health")
+        with urllib.request.urlopen(req, timeout=2.0) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            print(f"Status:   ready")
+            print(f"Service:  {data.get('service', 'termux-aichain')}")
+            print(f"Endpoint: {endpoint}")
+            if "model" in data and isinstance(data["model"], dict):
+                print(f"Model:    {data['model'].get('id', 'default')}")
+            if verbose:
+                print(f"Details:  {json.dumps(data, indent=2)}")
+    except Exception:
+        print("Status:   stopped (No local server running on port 8080)")
+        print("Hint:     Run 'termux-aichain run qwen-2.5-1.5b' to start local AI.")
+
+def cmd_stop() -> None:
+    """Safely stops locally running model server daemon with strict PID ownership verification."""
+    from termux_aichain.core.process_identity import verify_managed_process_ownership
+    lock_dir = Path(tempfile.gettempdir()) / "termux-aichain"
+    stopped = False
+    cleaned_stale = False
+
+    if lock_dir.exists():
+        for lock_file in lock_dir.glob("*.lock"):
+            try:
+                data = json.loads(lock_file.read_text(encoding="utf-8"))
+                pid = data.get("pid")
+                if pid and isinstance(pid, int):
+                    if verify_managed_process_ownership(pid, data):
+                        import signal
+                        try:
+                            os.kill(pid, signal.SIGTERM)
+                            stopped = True
+                        except OSError:
+                            pass
+                        lock_file.unlink(missing_ok=True)
+                    else:
+                        cleaned_stale = True
+                        lock_file.unlink(missing_ok=True)
+                else:
+                    lock_file.unlink(missing_ok=True)
+            except Exception:
+                lock_file.unlink(missing_ok=True)
+
+    if stopped:
+        print("✓ Local model server stopped successfully.")
+    elif cleaned_stale:
+        print("✓ Cleaned stale lock files (no active process matching lock identity was running).")
+    else:
+        print("No active managed server found to stop.")
+
+def cmd_run(model_name: str, replace: bool = False) -> None:
+    """1-Command User Experience: ensures model & server are ready, then launches interactive session."""
+    target = model_name.lower().strip()
+    if target not in MODELS_REGISTRY and not os.path.exists(target):
+        print(f"[-] Unknown model '{model_name}'. Available options:")
+        for k, v in MODELS_REGISTRY.items():
+            print(f"    - {k} ({v['size_desc']})")
+        return
+
+    models_dir = os.path.expanduser("~/models")
+    os.makedirs(models_dir, exist_ok=True)
+    
+    if target in MODELS_REGISTRY:
+        info = MODELS_REGISTRY[target]
+        model_file = os.path.join(models_dir, info["filename"])
+        if not os.path.exists(model_file):
+            print(f"[*] Model not found locally. Downloading {target} ({info['size_desc']})...")
+            try:
+                urllib.request.urlretrieve(info["url"], model_file)
+                print(f"[+] Download complete: {model_file}")
+            except Exception as ex:
+                print(f"[-] Download failed: {str(ex)}")
+                return
+    else:
+        model_file = target
+
+    print("✓ Model verified")
+
+    # Check if existing server is running
+    endpoint = "http://127.0.0.1:8080"
+    server_alive = False
+    try:
+        with urllib.request.urlopen(f"{endpoint}/health", timeout=1.0) as resp:
+            if resp.status == 200:
+                server_alive = True
+    except Exception:
+        server_alive = False
+
+    if server_alive and not replace:
+        print("✓ Connected to existing local server")
+        print(f"Endpoint: {endpoint}")
+        print(f"Model:    {target}")
+    else:
+        if server_alive and replace:
+            cmd_stop()
+            time.sleep(1.0)
+
+        # Launch server
+        if not shutil.which("llama-server"):
+            print("[!] 'llama-server' binary not found in PATH.")
+            print("    Run 'termux-aichain install' to auto-provision native tools.")
+            return
+
+        cfg = LocalServerConfig(model_path=model_file, host="127.0.0.1", port=8080)
+        mgr = LocalServerManager(cfg)
+        try:
+            print("[*] Starting local server engine...")
+            mgr.start(wait_ready=True, timeout=30.0)
+            print("✓ Local server started successfully")
+            print(f"Endpoint: {endpoint}")
+            print(f"Model:    {target}")
+        except Exception as ex:
+            print(f"[-] Failed to start server: {str(ex)}")
+            return
+
+    # Interactive Chat Session
+    from termux_aichain import LocalAgent, get_default_device_tools
+    agent = LocalAgent(endpoint=endpoint, tools=get_default_device_tools())
+    print("\n" + "=" * 70)
+    print(f"Termux AI Sovereign Session ({target}) - Type 'exit' to quit")
+    print("=" * 70)
+
+    try:
+        while True:
+            try:
+                user_input = input("\n[You] >>> ").strip()
+            except (EOFError, KeyboardInterrupt):
+                break
+            if not user_input or user_input.lower() in ("exit", "quit", "q"):
+                break
+            print("[AI]  ... thinking ...", end="\r")
+            try:
+                response = agent.run(user_input)
+                print(f"[AI]  {response}")
+            except Exception as ex:
+                print(f"[-] Error: {str(ex)}")
+    finally:
+        print("\nSession ended.")
+
+def cmd_serve(port: int, host: str, api_key: Optional[str] = None, allow_insecure_network: bool = False) -> None:
     """Launches instant 1-line agent server with Live Web Dashboard."""
+    if host not in {"127.0.0.1", "localhost", "::1"}:
+        if not api_key and not allow_insecure_network:
+            print(f"[SECURITY ERROR] Binding to non-loopback host '{host}' requires --api-key or --allow-insecure-network flag.")
+            sys.exit(1)
+        if not api_key and allow_insecure_network:
+            print(f"[SECURITY WARNING] Server bound to external host '{host}' without authentication!")
+
     prompt = PromptTemplate.from_template("Edge Task: {input}")
     chain = prompt | (lambda s: f"termux-aichain processed: {s}")
-    serve(chain, host=host, port=port, block=True)
+    serve(chain, host=host, port=port, api_key=api_key, block=True)
 
 def main() -> None:
     parser = argparse.ArgumentParser(
@@ -208,6 +414,21 @@ def main() -> None:
     )
     parser.add_argument("-v", "--version", action="version", version=f"%(prog)s {__version__}")
     subparsers = parser.add_subparsers(dest="command", help="Available subcommands")
+
+    # run (1-Command UX)
+    run_parser = subparsers.add_parser("run", help="1-command model execution & interactive chat")
+    run_parser.add_argument("model", nargs="?", default="qwen-2.5-1.5b", help="Model name or GGUF path (default: qwen-2.5-1.5b)")
+    run_parser.add_argument("--replace", action="store_true", help="Stop existing server if running another model")
+
+    # status
+    status_parser = subparsers.add_parser("status", help="Check local AI server status")
+    status_parser.add_argument("--verbose", "-v", action="store_true", help="Display full diagnostic metadata")
+
+    # stop
+    subparsers.add_parser("stop", help="Stop locally running AI server daemon")
+
+    # models
+    subparsers.add_parser("models", help="List verified on-device GGUF models")
 
     # install (One-Touch auto-provisioning)
     inst_parser = subparsers.add_parser("install", help="One-touch auto-provisioning of Termux dependencies & ecosystem")
@@ -227,10 +448,20 @@ def main() -> None:
     # serve
     serve_parser = subparsers.add_parser("serve", help="Launch 1-line REST/SSE/Web Dashboard server")
     serve_parser.add_argument("--port", type=int, default=8080, help="Port to bind (default: 8080)")
-    serve_parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind (default: 0.0.0.0)")
+    serve_parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to bind (default: 127.0.0.1 loopback)")
+    serve_parser.add_argument("--api-key", type=str, default=None, help="Bearer token for HTTP API authorization")
+    serve_parser.add_argument("--allow-insecure-network", action="store_true", help="Allow unauthenticated external network binding")
 
     args = parser.parse_args()
-    if args.command == "install":
+    if args.command == "run":
+        cmd_run(args.model, replace=args.replace)
+    elif args.command == "status":
+        cmd_status(verbose=args.verbose)
+    elif args.command == "stop":
+        cmd_stop()
+    elif args.command == "models":
+        cmd_models()
+    elif args.command == "install":
         cmd_install(target=args.target, install_all=args.all)
     elif args.command == "setup":
         cmd_setup()
@@ -239,7 +470,7 @@ def main() -> None:
     elif args.command == "pull":
         cmd_pull(args.model)
     elif args.command == "serve":
-        cmd_serve(args.port, args.host)
+        cmd_serve(args.port, args.host, api_key=args.api_key, allow_insecure_network=args.allow_insecure_network)
     else:
         parser.print_help()
 

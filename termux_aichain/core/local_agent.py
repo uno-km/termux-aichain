@@ -15,6 +15,7 @@ import time
 import json
 import shutil
 import hashlib
+import hmac
 import inspect
 import tempfile
 import threading
@@ -99,7 +100,7 @@ def validate_loopback_endpoint(endpoint: str) -> None:
         raise ServerConnectionRefusedError(f"Endpoint address '{addr}' violates 'loopback_only' transport policy.")
 
 class ServerIdentityVerifier:
-    """P0-6 & P0-7: Fail-closed identity verification shared between Connect and Managed modes."""
+    """P0-2 & P0-3: Fail-closed identity verification with exact service classification and constant-time hashing."""
 
     @staticmethod
     def verify(
@@ -135,30 +136,75 @@ class ServerIdentityVerifier:
         if not isinstance(payload, dict) or not payload:
             raise ServerProtocolMismatchError("Health response payload must be a non-empty JSON object.")
 
-        service_id = payload.get("service")
-        if not service_id or service_id not in {"llama-server", "bitnet-server", "termux-aichain"}:
-            raise ServerProtocolMismatchError(f"Incompatible or missing service identity '{service_id}'.")
+        # P0-3: Process liveness vs explicit service classification
+        status_field = payload.get("status")
+        service_id = payload.get("service") or payload.get("engine")
+
+        if not service_id:
+            if status_field in {"ok", "loading model", "success"}:
+                service_id = "openai-compatible"  # Generic capability, NOT assumed to be llama-server
+            else:
+                raise ServerProtocolMismatchError(f"Incompatible or missing service status (status='{status_field}').")
+
+        allowed_services = {"llama-server", "bitnet-server", "termux-aichain", "openai-compatible"}
+        if service_id not in allowed_services:
+            raise ServerProtocolMismatchError(f"Incompatible service identity '{service_id}'. Allowed: {sorted(allowed_services)}")
 
         if expected_service and service_id != expected_service:
             raise ServerProtocolMismatchError(f"Service mismatch: expected '{expected_service}', got '{service_id}'.")
 
-        proto_ver = payload.get("protocolVersion")
-        if proto_ver != expected_protocol_version:
+        proto_ver = payload.get("protocolVersion") or payload.get("version") or "1.0"
+        if expected_protocol_version and proto_ver != expected_protocol_version and not proto_ver.startswith(expected_protocol_version):
             raise ServerProtocolMismatchError(f"Protocol version mismatch: expected '{expected_protocol_version}', got '{proto_ver}'.")
 
         model_info = payload.get("model", {})
+        if isinstance(model_info, str):
+            model_info = {"id": model_info}
+        elif not isinstance(model_info, dict):
+            model_info = {}
+
         actual_model_id = model_info.get("id")
         actual_sha256 = model_info.get("sha256")
 
-        if expected_model_id and actual_model_id != expected_model_id:
-            raise ModelIdentityMismatchError(f"Model ID mismatch: expected '{expected_model_id}', got '{actual_model_id}'.")
+        # If model identity is not in /health, try querying /v1/models (OpenAI standard)
+        if not actual_model_id and (expected_model_id or require_model_identity):
+            try:
+                models_url = f"{endpoint_url.rstrip('/')}/v1/models"
+                req_m = urllib.request.Request(models_url, headers={"Accept": "application/json"})
+                with opener.open(req_m, timeout=2.0) as resp_m:
+                    if resp_m.status == 200:
+                        m_data = json.loads(resp_m.read(max_health_bytes).decode("utf-8"))
+                        data_list = m_data.get("data", [])
+                        if data_list and isinstance(data_list[0], dict):
+                            actual_model_id = data_list[0].get("id")
+            except Exception:
+                pass
 
-        if expected_model_sha256 and actual_sha256 != expected_model_sha256:
-            raise ModelIdentityMismatchError(f"Model checksum mismatch: expected '{expected_model_sha256}', got '{actual_sha256}'.")
+        # P0-2: Strict fail-closed model identity check
+        if expected_model_id:
+            if not actual_model_id:
+                raise ModelIdentityMismatchError(
+                    "Expected model ID was configured, but the server did not provide model identity."
+                )
+            if actual_model_id != expected_model_id:
+                raise ModelIdentityMismatchError(
+                    f"Model ID mismatch: expected '{expected_model_id}', got '{actual_model_id}'."
+                )
+
+        if expected_model_sha256:
+            if not actual_sha256:
+                raise ModelIdentityMismatchError(
+                    "Expected model SHA-256 was configured, but the server did not provide a checksum."
+                )
+            if not hmac.compare_digest(actual_sha256.lower(), expected_model_sha256.lower()):
+                raise ModelIdentityMismatchError("Model checksum mismatch.")
 
         if require_model_identity and not actual_model_id and not actual_sha256:
             raise ModelIdentityMismatchError("Server did not report model identity while require_model_identity is True.")
 
+        payload["service"] = service_id
+        payload["protocolVersion"] = proto_ver
+        payload["model"] = {"id": actual_model_id, "sha256": actual_sha256}
         return payload
 
 class AgentLease:
@@ -184,13 +230,26 @@ class AgentLease:
                 self._acquired = False
 
 class LocalAgent:
-    """Enterprise 4-Mode Local Agent Runtime with fail-closed security and atomic lifecycle."""
+    """
+    Sovereign Enterprise Local Agent Runtime (Progressive Disclosure & Facade API).
+    
+    Simple Usage (User-Friendly Facade):
+        >>> from termux_aichain import LocalAgent
+        >>> agent = LocalAgent()  # Connects to default http://127.0.0.1:8080
+        >>> print(agent.run("What is the battery level?"))
+        
+        >>> agent = LocalAgent.local("qwen2.5-1.5b")  # Ensures local model server is running
+        >>> print(agent.run("Hello from Termux Edge!"))
+
+    Advanced Usage:
+        >>> agent = LocalAgent.connect("http://127.0.0.1:8080", tools=[vibrate_device])
+    """
 
     def __init__(
         self,
-        mode: str,
-        chat_model: BaseChatModel,
-        tools: Sequence[Union[Tool, Callable[..., Any]]],
+        endpoint_or_mode: Optional[str] = None,
+        chat_model: Optional[BaseChatModel] = None,
+        tools: Optional[Sequence[Union[Tool, Callable[..., Any]]]] = None,
         tool_policy: Optional[ToolPolicy] = None,
         system_prompt: Optional[str] = None,
         managed_process: Optional[subprocess.Popen] = None,
@@ -198,19 +257,47 @@ class LocalAgent:
         lock_handle: Optional[Any] = None,
         owns_managed_process: bool = False,
         owns_identity_lock: bool = False,
+        runtime_ownership: str = "OWNED",
         idle_timeout_seconds: float = 300.0,
-        approval_callback: Optional[Callable[[str, Dict[str, Any]], bool]] = None
+        approval_callback: Optional[Callable[[str, Dict[str, Any]], bool]] = None,
+        api_key: Optional[str] = None,
+        mode: Optional[str] = None,
+        **kwargs: Any
     ):
-        self.mode = mode
+        # 1. Resolve mode and chat model with intuitive progressive defaults
+        resolved_mode = mode or "connect"
+        target_endpoint = "http://127.0.0.1:8080"
+
+        if endpoint_or_mode:
+            if endpoint_or_mode in {"connect", "managed", "embedded", "remote"}:
+                resolved_mode = endpoint_or_mode
+            else:
+                target_endpoint = endpoint_or_mode
+                resolved_mode = "connect"
+
+        if chat_model is None:
+            model_name = "default"
+            chat_model = OpenAICompatibleChat(
+                base_url=f"{target_endpoint.rstrip('/')}/v1",
+                model=model_name,
+                api_key=api_key
+            )
+
+        self.mode = resolved_mode
         self.chat_model = chat_model
-        self.tools = list(tools)
-        self.tool_policy = tool_policy or ToolPolicy(default="deny")
+        self.tools = list(tools or [])
+        allow_registered = kwargs.get("allow_registered_tools", False)
+        self.tool_policy = tool_policy or (
+            ToolPolicy.allow_registered_tools_for_development([t.name if isinstance(t, Tool) else getattr(t, "__name__", "tool") for t in self.tools])
+            if (allow_registered and self.tools) else ToolPolicy(default="deny")
+        )
         self.system_prompt = system_prompt
         self.managed_process = managed_process
         self.lock_file_path = lock_file_path
         self.lock_handle = lock_handle
         self.owns_managed_process = owns_managed_process
         self.owns_identity_lock = owns_identity_lock
+        self.runtime_ownership = runtime_ownership
         self.idle_timeout_seconds = idle_timeout_seconds
         self.approval_callback = approval_callback
 
@@ -234,6 +321,96 @@ class LocalAgent:
         if self.mode == "managed" and self.owns_managed_process:
             self._monitor_thread = threading.Thread(target=self._idle_supervisor_loop, daemon=True)
             self._monitor_thread.start()
+
+    @classmethod
+    def connect(
+        cls,
+        endpoint: str = "http://127.0.0.1:8080",
+        tools: Optional[Sequence[Union[Tool, Callable[..., Any]]]] = None,
+        api_key: Optional[str] = None,
+        system_prompt: Optional[str] = None,
+        tool_policy: Optional[ToolPolicy] = None,
+        approval_callback: Optional[Callable[[str, Dict[str, Any]], bool]] = None
+    ) -> LocalAgent:
+        """User-friendly facade for connecting to any running local/remote model server."""
+        return cls.create(
+            mode="connect",
+            endpoint=endpoint,
+            tools=tools or [],
+            api_key=api_key,
+            system_prompt=system_prompt,
+            tool_policy=tool_policy,
+            approval_callback=approval_callback
+        )
+
+    @classmethod
+    def local(
+        cls,
+        model: str = "qwen2.5-1.5b",
+        tools: Optional[Sequence[Union[Tool, Callable[..., Any]]]] = None,
+        system_prompt: Optional[str] = None,
+        runtime_options: Optional[Dict[str, Any]] = None
+    ) -> LocalAgent:
+        """
+        User-friendly 1-Line facade: Automatically inspects local model, connects to existing
+        server if alive, or starts managed daemon server seamlessly.
+        """
+        # Resolve model path
+        models_dir = Path.home() / "models"
+        candidate_paths = [
+            models_dir / f"{model}.gguf",
+            models_dir / f"{model}-instruct-q4_k_m.gguf",
+            models_dir / f"Qwen2.5-1.5B-Instruct-Q4_K_M.gguf",
+            models_dir / f"Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+            Path(model)
+        ]
+        resolved_path = None
+        for p in candidate_paths:
+            if p.exists() and p.is_file():
+                resolved_path = p
+                break
+
+        endpoint = "http://127.0.0.1:8080"
+        # Check if server is already running
+        try:
+            ServerIdentityVerifier.verify(endpoint_url=endpoint, timeout_seconds=1.0)
+            # Server is alive -> Connect immediately (ATTACHED)
+            return cls.connect(endpoint=endpoint, tools=tools, system_prompt=system_prompt)
+        except Exception:
+            pass
+
+        if not resolved_path:
+            # Fallback to direct connect with user hint
+            return cls(endpoint=endpoint, tools=tools, system_prompt=system_prompt)
+
+        return cls.create(
+            mode="managed",
+            model_path=str(resolved_path),
+            tools=tools or [],
+            system_prompt=system_prompt
+        )
+
+    def run(self, prompt_or_input: Union[str, Dict[str, Any]], max_iterations: int = 10) -> str:
+        """
+        High-level execution facade returning clean text response.
+        
+        >>> agent = LocalAgent()
+        >>> print(agent.run("Summarize system status"))
+        """
+        if isinstance(prompt_or_input, str):
+            input_payload = {"messages": [HumanMessage(prompt_or_input)]}
+        else:
+            input_payload = prompt_or_input
+
+        res = self.invoke(input_payload, max_iterations=max_iterations)
+        messages = res.get("messages", [])
+        if messages:
+            last_msg = messages[-1]
+            if hasattr(last_msg, "content"):
+                return str(last_msg.content)
+            elif isinstance(last_msg, dict):
+                return str(last_msg.get("content", ""))
+        return str(res)
 
     def acquire_lease(self) -> AgentLease:
         """Acquires a client lease to prevent idle eviction during active workflow."""
@@ -372,6 +549,7 @@ class LocalAgent:
                 "state": self.state.value,
                 "active_requests": self.active_requests,
                 "connected_leases": self.connected_leases,
+                "runtime_ownership": self.runtime_ownership,
                 "idle_duration_seconds": round(time.monotonic() - self.last_activity_monotonic, 2),
                 "pid": self.managed_process.pid if self.managed_process else os.getpid(),
                 "tools_registered": [t.name for t in self.tools],
@@ -429,7 +607,9 @@ class LocalAgent:
         tools: Optional[Sequence[Union[Tool, Callable[..., Any]]]] = None,
         tool_policy: Optional[ToolPolicy] = None,
         system_prompt: Optional[str] = None,
-        approval_callback: Optional[Callable[[str, Dict[str, Any]], bool]] = None
+        approval_callback: Optional[Callable[[str, Dict[str, Any]], bool]] = None,
+        api_key: Optional[str] = None,
+        **kwargs: Any
     ) -> LocalAgent:
         """Factory creating LocalAgent in one of 4 explicit modes with atomic OS locks and safety guardrails."""
         tools_list = list(tools or [])
@@ -444,7 +624,7 @@ class LocalAgent:
             if cfg.transport_policy == "loopback_only":
                 validate_loopback_endpoint(target_endpoint)
 
-            ServerIdentityVerifier.verify(
+            server_info = ServerIdentityVerifier.verify(
                 endpoint_url=target_endpoint,
                 timeout_seconds=cfg.timeout_seconds,
                 max_health_bytes=cfg.max_health_bytes,
@@ -453,7 +633,11 @@ class LocalAgent:
                 expected_model_sha256=cfg.expected_model_sha256
             )
 
-            chat = OpenAICompatibleChat(base_url=f"{target_endpoint.rstrip('/')}/v1", model=cfg.expected_model_id or "default")
+            chat = OpenAICompatibleChat(
+                base_url=f"{target_endpoint.rstrip('/')}/v1",
+                model=cfg.expected_model_id or "default",
+                api_key=api_key
+            )
             return cls(
                 mode="connect",
                 chat_model=chat,
@@ -462,7 +646,8 @@ class LocalAgent:
                 system_prompt=system_prompt,
                 owns_managed_process=False,
                 owns_identity_lock=False,
-                approval_callback=approval_callback
+                approval_callback=approval_callback,
+                api_key=api_key
             )
 
         # ======================================================================
@@ -572,24 +757,33 @@ class LocalAgent:
 
                 raise DuplicateServerOwnershipError("Existing lock owner failed to bring server online within deadline.")
 
+            server_mgr: Optional[Any] = None
             proc: Optional[subprocess.Popen] = None
             try:
                 actual_threads = m_cfg.threads or max(1, (os.cpu_count() or 4) - 1)
-                cmd = [
-                    m_cfg.binary_name,
-                    "-m", model_path,
-                    "--host", "127.0.0.1",
-                    "--port", str(port),
-                    "-t", str(actual_threads),
-                    "-c", str(m_cfg.n_ctx)
-                ]
-                proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                from termux_aichain.core.providers.local_server import LocalServerManager, LocalServerConfig
+                srv_cfg = LocalServerConfig(
+                    model_path=model_path,
+                    host="127.0.0.1",
+                    port=port,
+                    threads=actual_threads,
+                    n_ctx=m_cfg.n_ctx
+                )
+                server_mgr = LocalServerManager(srv_cfg, binary_name=m_cfg.binary_name)
+                server_mgr.start(wait_ready=False)
+                proc = server_mgr.process
+                if proc is None:
+                    raise ServerStartupTimeoutError("Managed server manager did not create a valid process.")
 
                 t0 = time.time()
                 ready = False
                 while time.time() - t0 < m_cfg.startup_timeout_seconds:
-                    if proc.poll() is not None:
-                        raise ServerStartupTimeoutError(f"Managed server exited prematurely with code {proc.returncode}.")
+                    if proc and proc.poll() is not None:
+                        diagnostics = server_mgr.ring_log.get_recent_redacted_text(20)
+                        raise ServerStartupTimeoutError(
+                            f"Managed server exited prematurely with code {proc.returncode}.\n"
+                            f"Recent Server Diagnostics:\n{diagnostics}"
+                        )
                     status, _ = inspect_existing_server()
                     if status == "VERIFIED":
                         ready = True
@@ -597,10 +791,19 @@ class LocalAgent:
                     time.sleep(0.5)
 
                 if not ready:
-                    raise ServerStartupTimeoutError(f"Managed server failed to initialize within {m_cfg.startup_timeout_seconds}s.")
+                    diagnostics = server_mgr.ring_log.get_recent_redacted_text(20) if server_mgr else ""
+                    raise ServerStartupTimeoutError(
+                        f"Managed server failed to initialize within {m_cfg.startup_timeout_seconds}s.\n"
+                        f"Recent Server Diagnostics:\n{diagnostics}"
+                    )
 
+                from termux_aichain.core.process_identity import get_process_start_identity
+                target_pid = proc.pid if proc else os.getpid()
                 lock_meta = {
-                    "pid": proc.pid,
+                    "schemaVersion": 1,
+                    "pid": target_pid,
+                    "startIdentity": get_process_start_identity(target_pid),
+                    "executablePath": shutil.which(m_cfg.binary_name) or m_cfg.binary_name,
                     "startedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                     "endpoint": endpoint_url,
                     "modelPath": model_path,
@@ -627,7 +830,6 @@ class LocalAgent:
                     idle_timeout_seconds=m_cfg.idle_timeout_seconds,
                     approval_callback=approval_callback
                 )
-
             except Exception:
                 if proc and proc.poll() is None:
                     proc.terminate()
@@ -635,7 +837,6 @@ class LocalAgent:
                         proc.wait(timeout=2.0)
                     except Exception:
                         proc.kill()
-
                 if lock_handle:
                     try:
                         if fcntl:
@@ -646,7 +847,6 @@ class LocalAgent:
                         lock_handle.close()
                     except Exception:
                         pass
-
                 if lock_file.exists():
                     try:
                         lock_file.unlink()
