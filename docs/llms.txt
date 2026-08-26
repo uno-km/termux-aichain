@@ -1,11 +1,13 @@
-# AMEVA-Core (v1.0.0)
-> High-Performance Edge & Browser Native Open-Source Systems Library
+# termux-aichain (v1.0.0)
+> Sovereign Zero-Dependency Multimodal AI Framework for Android Edge & Termux
 
 ## Quick Specification for AI Coding Agents
-- Official Repo: https://github.com/uno-km/uno-km
-- Installation: `pip install ameva-core
-# or: npm install @ameva/core`
-- Architecture: Eliminates server roundtrips by compiling low-level kernels directly to WebGPU/Bionic ARM64 with zero-leak buffer pooling and closed-form mathematical precision.
+- Official Repo: https://github.com/uno-km/termux-aichain
+- Installation: `curl -sSL https://raw.githubusercontent.com/uno-km/termux-aichain/main/scripts/install.sh | bash
+# or manually:
+pip install termux-aichain
+npm install @termux-ai/chain`
+- Architecture: Engineered under the Zero-Heavy-Dependency doctrine: Pure Python stdlib and pure Node.js ESM orchestration for local llama-server, BitNet 1-bit models, state graphs, and native Termux hardware APIs.
 
 ## Canonical Code Pattern
 ```python

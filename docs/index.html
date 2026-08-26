@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AMEVA-Core | Official Documentation</title>
-  <meta name="description" content="Eliminates server roundtrips by compiling low-level kernels directly to WebGPU/Bionic ARM64 with zero-leak buffer pooling and closed-form mathematical precision.">
+  <title>termux-aichain | Official Documentation</title>
+  <meta name="description" content="Engineered under the Zero-Heavy-Dependency doctrine: Pure Python stdlib and pure Node.js ESM orchestration for local llama-server, BitNet 1-bit models, state graphs, and native Termux hardware APIs.">
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="assets/style.css">
   <script src="assets/i18n.js" defer></script>
@@ -14,16 +14,16 @@
 <body>
   <header>
     <a href="index.html" class="header-brand">
-      <img src="favicon.svg" alt="AMEVA-Core Logo">
-      <h1 data-i18n="common.brand">AMEVA-Core</h1>
+      <img src="favicon.svg" alt="termux-aichain Logo">
+      <h1 data-i18n="common.brand">termux-aichain</h1>
     </a>
     <div class="header-controls">
-      <span class="release-tag" data-i18n="common.releaseTag">v1.0.0 (Standard Tech)</span>
+      <span class="release-tag" data-i18n="common.releaseTag">v1.0.0 (Sovereign Multimodal Edge Release)</span>
       <div class="lang-selector-wrapper"></div>
-      <a href="https://pypi.org/project/ameva-core/" target="_blank" class="header-btn" data-i18n="common.pypiBtn">PyPI (pip)</a>
-      <a href="https://www.npmjs.com/package/@ameva/core" target="_blank" class="header-btn npm-btn" data-i18n="common.npmBtn">npm</a>
+      <a href="https://pypi.org/project/termux-aichain/" target="_blank" class="header-btn" data-i18n="common.pypiBtn">PyPI (pip)</a>
+      <a href="https://www.npmjs.com/package/@termux-ai/chain" target="_blank" class="header-btn npm-btn" data-i18n="common.npmBtn">npm</a>
       <a href="https://github.com/sponsors/uno-km" target="_blank" class="header-btn" style="border-color: #ea4aaa; color: #ea4aaa; font-weight: 700;">Sponsor</a>
-      <a href="https://github.com/uno-km/uno-km" target="_blank" class="header-btn primary" data-i18n="common.githubBtn">GitHub</a>
+      <a href="https://github.com/uno-km/termux-aichain" target="_blank" class="header-btn primary" data-i18n="common.githubBtn">GitHub</a>
       <a href="/" class="header-btn" style="border-color:#004499;color:#004499;font-weight:600;" data-i18n="common.founderBtn">Founder CV</a>
     </div>
   </header>
@@ -77,49 +77,63 @@
 
     <main class="content">
       <!-- Section 1: Main Title & Subtitle -->
-      <h2 data-i18n="home.title">AMEVA-Core</h2>
-      <p class="subtitle" data-i18n="home.subtitle">High-Performance Edge & Browser Native Open-Source Systems Library</p>
+      <h2 data-i18n="home.title">termux-aichain</h2>
+      <p class="subtitle" data-i18n="home.subtitle">Sovereign Zero-Dependency Multimodal AI Framework for Android Edge & Termux</p>
 
       <!-- Section 2: Badges Bar -->
       <div class="badges-bar">
-        <a href="https://pypi.org/project/ameva-core/" target="_blank"><img src="https://img.shields.io/pypi/v/ameva-core.svg?color=004499" alt="PyPI Version"></a>
-        <a href="https://pypistats.org/packages/ameva-core" target="_blank"><img src="https://img.shields.io/pypi/dm/ameva-core.svg?color=2563eb&label=PyPI%20Downloads" alt="PyPI Downloads"></a>
-        <a href="https://www.npmjs.com/package/@ameva/core" target="_blank"><img src="https://img.shields.io/npm/v/@ameva/core.svg?color=cb3837" alt="npm Version"></a>
-        <a href="https://www.npmjs.com/package/@ameva/core" target="_blank"><img src="https://img.shields.io/npm/dm/@ameva/core.svg?color=2563eb&label=npm%20Downloads" alt="npm Downloads"></a>
+        <a href="https://pypi.org/project/termux-aichain/" target="_blank"><img src="https://img.shields.io/pypi/v/termux-aichain.svg?color=004499" alt="PyPI Version"></a>
+        <a href="https://pypistats.org/packages/termux-aichain" target="_blank"><img src="https://img.shields.io/pypi/dm/termux-aichain.svg?color=2563eb&label=PyPI%20Downloads" alt="PyPI Downloads"></a>
+        <a href="https://www.npmjs.com/package/@termux-ai/chain" target="_blank"><img src="https://img.shields.io/npm/v/@termux-ai/chain.svg?color=cb3837" alt="npm Version"></a>
+        <a href="https://www.npmjs.com/package/@termux-ai/chain" target="_blank"><img src="https://img.shields.io/npm/dm/@termux-ai/chain.svg?color=2563eb&label=npm%20Downloads" alt="npm Downloads"></a>
         <img src="https://img.shields.io/badge/license-Apache-2.0-success.svg" alt="License">
         <img src="https://img.shields.io/badge/tests-100%25_PASS-success.svg" alt="Tests">
-        <img src="https://img.shields.io/badge/platform-WebGPU_/_ARM64-blueviolet.svg" alt="Platform">
+        <img src="https://img.shields.io/badge/platform-Android_Termux_/_ARM64_/_Linux_/_Edge-blueviolet.svg" alt="Platform">
       </div>
 
       <!-- Section 3: 1-Line Quick Installation Alert -->
       <div class="alert alert-tip">
         <span class="alert-title" data-i18n="home.quickInstallTitle">1-Line Quick Installation</span>
         <p data-i18n="home.quickInstallDesc">Install the official package directly into your runtime:</p>
-        <pre><code>pip install ameva-core
-# or: npm install @ameva/core</code></pre>
+        <pre><code>curl -sSL https://raw.githubusercontent.com/uno-km/termux-aichain/main/scripts/install.sh | bash
+# or manually:
+pip install termux-aichain
+npm install @termux-ai/chain</code></pre>
       </div>
 
       <!-- Section 4: Engineering Challenge & Architectural Breakthrough -->
       <h3 data-i18n="home.challengeTitle">The Engineering Challenge</h3>
-      <p data-i18n="home.challengeText">Standard desktop frameworks fail on constrained edge nodes and browser sandboxes due to syscall restrictions, heavy memory footprints, and severe server-dependency latency.</p>
+      <p data-i18n="home.challengeText">Mainstream AI frameworks (LangChain, LlamaIndex, CrewAI) introduce 80+ heavy dependencies, 250MB+ RSS overheads, and frequent compilation failures on ARM Android devices.</p>
 
       <h3 data-i18n="home.breakthroughTitle">The Architectural Breakthrough</h3>
-      <p data-i18n="home.breakthroughText">Eliminates server roundtrips by compiling low-level kernels directly to WebGPU/Bionic ARM64 with zero-leak buffer pooling and closed-form mathematical precision.</p>
+      <p data-i18n="home.breakthroughText">Engineered under the Zero-Heavy-Dependency doctrine: Pure Python stdlib and pure Node.js ESM orchestration for local llama-server, BitNet 1-bit models, state graphs, and native Termux hardware APIs.</p>
 
       <!-- Section 5: Key Capabilities Grid -->
       <h3 data-i18n="home.featuresTitle">Key Capabilities &amp; Built-in Hardening</h3>
       <div class="features-grid">
         <div class="feature-card">
-          <h4 data-i18n="home.features.0.title">Zero-Config Native Execution</h4>
-          <p data-i18n="home.features.0.desc">Executes instantly on mobile, Termux, and browser runtimes with zero external compilation overhead.</p>
+          <h4 data-i18n="home.features.0.title">Zero External Heavy Dependencies</h4>
+          <p data-i18n="home.features.0.desc">Pure Python standard library and pure Node.js ESM. Cold start import in under 18ms with less than 280KB disk footprint.</p>
         </div>
         <div class="feature-card">
-          <h4 data-i18n="home.features.1.title">Mathematical Integrity & Precision</h4>
-          <p data-i18n="home.features.1.desc">Closed-form algebraic formulation with deterministic float precision across heterogeneous hardware.</p>
+          <h4 data-i18n="home.features.1.title">Full Multimodal ReAct Pipeline</h4>
+          <p data-i18n="home.features.1.desc">Seamless orchestration across STT voice capture, local BitNet/Llama reasoning, Playwright mobile web scraping, and Diffusion image synthesis.</p>
         </div>
         <div class="feature-card">
-          <h4 data-i18n="home.features.2.title">Hardware Memory Protection</h4>
-          <p data-i18n="home.features.2.desc">Automated buffer pooling and weakref lifetime management preventing GPU VRAM exhaustion.</p>
+          <h4 data-i18n="home.features.2.title">Local Server Hardware Fine-Tuning</h4>
+          <p data-i18n="home.features.2.desc">12 hardware tuning flags (threads, ctx, batch, GPU layers, FlashAttention, KV quantization, RoPE) for 0.5B to 14B models.</p>
+        </div>
+        <div class="feature-card">
+          <h4 data-i18n="home.features.3.title">SQLite Long-Term Memory & RAG</h4>
+          <p data-i18n="home.features.3.desc">Persistent entity key-value storage and pure cosine vector search without ChromaDB or NumPy.</p>
+        </div>
+        <div class="feature-card">
+          <h4 data-i18n="home.features.4.title">1-Line REST, SSE & Web Dashboard</h4>
+          <p data-i18n="home.features.4.desc">Exposes any agent over local mobile WiFi with Server-Sent Events, live chat, interactive graph visualizer, and trace profiler table.</p>
+        </div>
+        <div class="feature-card">
+          <h4 data-i18n="home.features.5.title">Native Android Hardware Actuation</h4>
+          <p data-i18n="home.features.5.desc">Direct tool-calling wrappers for Termux-API (battery status, sensors, GPS location, STT, TTS, vibration) with kernel sysfs fallbacks.</p>
         </div>
       </div>
 
@@ -135,19 +149,39 @@
         </thead>
         <tbody>
           <tr>
-            <td><strong>Compute Engine</strong></td>
-            <td>WebGPU Compute Shaders (WGSL), FP16/FP32</td>
-            <td><span class="status-badge active">Production</span></td>
+            <td><strong>Core Orchestration</strong></td>
+            <td>PromptTemplate, ChatPromptTemplate, Runnable, | Pipe Operator, JsonOutputParser, Splitters</td>
+            <td><span class="status-badge active">Production Ready</span></td>
           </tr>
           <tr>
-            <td><strong>Memory Subsystem</strong></td>
-            <td>Zero-Copy Ring Buffers, Weakref GC Pooling</td>
-            <td><span class="status-badge active">Production</span></td>
+            <td><strong>Multi-Agent Graph</strong></td>
+            <td>StateGraph, CompiledGraph, START, END, Tool, @tool, create_react_agent</td>
+            <td><span class="status-badge active">Production Ready</span></td>
           </tr>
           <tr>
-            <td><strong>Platform Runtimes</strong></td>
-            <td>Node.js, Chromium WebGPU, Android Termux Bionic</td>
-            <td><span class="status-badge active">Production</span></td>
+            <td><strong>Long-Term Memory</strong></td>
+            <td>ConversationBufferMemory, SQLiteEntityMemory, SQLiteVectorStore, FactExtractor</td>
+            <td><span class="status-badge active">Production Ready</span></td>
+          </tr>
+          <tr>
+            <td><strong>Local Serving & Tracing</strong></td>
+            <td>AgentServer, serve(), Tracer, TraceSpan, @traceable, Tree Renderer</td>
+            <td><span class="status-badge active">Production Ready</span></td>
+          </tr>
+          <tr>
+            <td><strong>Device Hardware API</strong></td>
+            <td>Battery, Accelerometer, Ambient Light, GPS Location, STT, TTS, Vibration, Shell</td>
+            <td><span class="status-badge active">Production Ready</span></td>
+          </tr>
+          <tr>
+            <td><strong>uno-km Ecosystem Tools</strong></td>
+            <td>termux_stt (STT), termux_diffusion (Diffusion), termux_playwright (Headless Web)</td>
+            <td><span class="status-badge active">Production Ready</span></td>
+          </tr>
+          <tr>
+            <td><strong>Local Server Tuning Engine</strong></td>
+            <td>LocalServerConfig, LocalServerManager, LlamaCppServer, BitNetServer, Sampling Matrix</td>
+            <td><span class="status-badge active">Production Ready</span></td>
           </tr>
         </tbody>
       </table>

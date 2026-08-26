@@ -1,20 +1,25 @@
-# AMEVA-Core Full Technical Specification (v1.0.0)
+# termux-aichain Full Technical Specification (v1.0.0)
 Official Documentation & Deep Architecture Reference for Autonomous AI Agents.
 
 ## 1. System Overview
-High-Performance Edge & Browser Native Open-Source Systems Library
-Eliminates server roundtrips by compiling low-level kernels directly to WebGPU/Bionic ARM64 with zero-leak buffer pooling and closed-form mathematical precision.
+Sovereign Zero-Dependency Multimodal AI Framework for Android Edge & Termux
+Engineered under the Zero-Heavy-Dependency doctrine: Pure Python stdlib and pure Node.js ESM orchestration for local llama-server, BitNet 1-bit models, state graphs, and native Termux hardware APIs.
 
 ## 2. Package & Installation
-- PyPI: ameva-core
-- Command: pip install ameva-core
-# or: npm install @ameva/core
-- Repository: https://github.com/uno-km/uno-km
+- PyPI: termux-aichain
+- Command: curl -sSL https://raw.githubusercontent.com/uno-km/termux-aichain/main/scripts/install.sh | bash
+# or manually:
+pip install termux-aichain
+npm install @termux-ai/chain
+- Repository: https://github.com/uno-km/termux-aichain
 
 ## 3. Core Capabilities
-- **Zero-Config Native Execution**: Executes instantly on mobile, Termux, and browser runtimes with zero external compilation overhead.
-- **Mathematical Integrity & Precision**: Closed-form algebraic formulation with deterministic float precision across heterogeneous hardware.
-- **Hardware Memory Protection**: Automated buffer pooling and weakref lifetime management preventing GPU VRAM exhaustion.
+- **Zero External Heavy Dependencies**: Pure Python standard library and pure Node.js ESM. Cold start import in under 18ms with less than 280KB disk footprint.
+- **Full Multimodal ReAct Pipeline**: Seamless orchestration across STT voice capture, local BitNet/Llama reasoning, Playwright mobile web scraping, and Diffusion image synthesis.
+- **Local Server Hardware Fine-Tuning**: 12 hardware tuning flags (threads, ctx, batch, GPU layers, FlashAttention, KV quantization, RoPE) for 0.5B to 14B models.
+- **SQLite Long-Term Memory & RAG**: Persistent entity key-value storage and pure cosine vector search without ChromaDB or NumPy.
+- **1-Line REST, SSE & Web Dashboard**: Exposes any agent over local mobile WiFi with Server-Sent Events, live chat, interactive graph visualizer, and trace profiler table.
+- **Native Android Hardware Actuation**: Direct tool-calling wrappers for Termux-API (battery status, sensors, GPS location, STT, TTS, vibration) with kernel sysfs fallbacks.
 
 ## 4. Canonical Implementation
 ```python
