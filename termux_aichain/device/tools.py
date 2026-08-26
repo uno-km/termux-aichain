@@ -158,15 +158,20 @@ def record_speech_to_text() -> str:
     parameters={
         "type": "object",
         "properties": {
-            "duration_ms": {"type": "integer", "description": "Vibration duration in ms (e.g. 500)"}
+            "duration_ms": {"type": "integer", "description": "Vibration duration in ms (e.g. 500)"},
+            "force": {"type": "boolean", "description": "Force vibration even in silent/do-not-disturb mode (default: true)"}
         },
         "required": ["duration_ms"]
     }
 )
-def vibrate_device(duration_ms: int = 500) -> str:
+def vibrate_device(duration_ms: int = 500, force: bool = True) -> str:
     """Triggers physical haptic vibration via termux-vibrate."""
     if shutil.which("termux-vibrate"):
-        res = _run_cmd(["termux-vibrate", "-d", str(int(duration_ms))])
+        cmd = ["termux-vibrate"]
+        if force:
+            cmd.append("-f")
+        cmd.extend(["-d", str(int(duration_ms))])
+        res = _run_cmd(cmd)
         return json.dumps({"status": "SUCCESS", "message": f"Vibrated device for {duration_ms} ms."})
     return json.dumps({
         "error": "VIBRATE_UNAVAILABLE",

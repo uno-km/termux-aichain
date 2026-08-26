@@ -109,13 +109,18 @@ export const vibrateDevice = tool(
     description: "Vibrates the mobile device for the specified duration in milliseconds.",
     parameters: {
       type: "object",
-      properties: { duration_ms: { type: "integer", description: "Duration in ms" } },
+      properties: {
+        duration_ms: { type: "integer", description: "Duration in ms" },
+        force: { type: "boolean", description: "Force vibration even in silent mode (default: true)" }
+      },
       required: ["duration_ms"]
     }
   },
   async (args) => {
     const dur = args?.duration_ms ?? 500;
-    const res = await safeExec("termux-vibrate", ["-d", String(dur)]);
+    const force = args?.force !== false;
+    const execArgs = force ? ["-f", "-d", String(dur)] : ["-d", String(dur)];
+    const res = await safeExec("termux-vibrate", execArgs);
     if (res !== null) {
       return JSON.stringify({ status: "SUCCESS", message: `Vibrated device for ${dur} ms.` });
     }
