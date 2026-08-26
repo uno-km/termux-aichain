@@ -1,10 +1,17 @@
-﻿{
-    "timestamp":  "2026-08-26T15:44:51Z",
-    "sourceTreeTested":  "d5748b95c0debb46262b2c6d7a135d701775e58e",
-    "pythonVersion":  "3.12.0",
-    "osPlatform":  "Windows-10-10.0.19045-SP0",
-    "sourceCommitTested":  "b42a32d69c0ed95978ce44883aa60343c966dfa0",
-    "nodeExitCode":  0,
-    "pytestExitCode":  0,
-    "nodeVersion":  "v24.16.0"
+{
+  "source_commit_tested": "2ae3afb5bbc60acaca9218a2e2cffce8c05abb6e",
+  "source_tree_tested": "8072aee485918fd65002bf2c1d95bcdcd0f3b472",
+  "working_tree_clean": false,
+  "python_version": "3.12.0",
+  "python_total_tests": 136,
+  "python_passed_tests": 136,
+  "python_duration_sec": 10.6,
+  "python_exit_code": 0,
+  "node_total_tests": 17,
+  "node_passed_tests": 17,
+  "node_duration_ms": 534.22,
+  "node_exit_code": 0,
+  "total_passed_tests": 153,
+  "os_platform": "Windows-10-10.0.19045-SP0",
+  "timestamp_utc": "2026-08-26T16:05:53Z"
 }
