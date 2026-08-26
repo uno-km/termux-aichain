@@ -3,7 +3,7 @@ import {
   ChatPromptTemplate,
   JsonOutputParser,
   RecursiveCharacterTextSplitter
-} from "../dist/index.js";
+} from "../js/esm/index.js";
 
 console.log("=== 1. Node.js Prompt Template Test ===");
 const prompt = PromptTemplate.fromTemplate("Task: {task} on {device}");

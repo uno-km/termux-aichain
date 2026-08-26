@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert";
-import { PromptTemplate, ChatPromptTemplate } from "../dist/core/prompt.js";
-import { StringOutputParser, JsonOutputParser } from "../dist/core/parsers.js";
-import { CharacterTextSplitter, RecursiveCharacterTextSplitter } from "../dist/core/splitters.js";
+import { PromptTemplate, ChatPromptTemplate } from "../js/esm/core/prompt.js";
+import { StringOutputParser, JsonOutputParser } from "../js/esm/core/parsers.js";
+import { CharacterTextSplitter, RecursiveCharacterTextSplitter } from "../js/esm/core/splitters.js";
 
 test("Node.js: PromptTemplate basic substitution", () => {
   const prompt = PromptTemplate.fromTemplate("Hello {name}, target is {target}.");

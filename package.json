@@ -1,13 +1,19 @@
-﻿{
+{
   "name": "@termux-ai/chain",
   "version": "0.1.0",
   "description": "Ultra-lightweight Zero-Dependency AI chaining & agent framework for Termux, Android and Edge computing.",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "js/esm/index.js",
+  "module": "js/esm/index.js",
+  "types": "js/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./js/esm/index.js",
+      "types": "./js/esm/index.d.ts"
+    }
+  },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc -p tsconfig.json && node -e \"fs.cpSync('dist', 'js/esm', {recursive: true})\"",
     "test": "node --test tests/*.test.js"
   },
   "keywords": [
