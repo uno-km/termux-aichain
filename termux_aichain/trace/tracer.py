@@ -81,6 +81,10 @@ class Tracer:
         self.root_span = TraceSpan(name=root_name)
         self._current_stack: List[TraceSpan] = [self.root_span]
 
+    @property
+    def root(self) -> TraceSpan:
+        return self.root_span
+
     def trace(self, name: str, inputs: Any = None, **metadata: Any) -> _SpanContext:
         span = TraceSpan(name=name, inputs=inputs, metadata=metadata)
         parent = self._current_stack[-1]
@@ -110,33 +114,38 @@ class Tracer:
             line = f"{prefix}{marker}{c_cyan}{span.name}{c_reset} {c_green}[{span.duration_ms} ms{tok_info}]{c_reset}{err_info}"
             lines.append(line)
 
-            child_prefix = prefix + ("    " if is_last else "│   ") if not is_root else ""
-            for i, child in enumerate(span.children):
-                _walk(child, prefix=child_prefix, is_last=(i == len(span.children) - 1))
+            child_prefix = prefix + ("    " if is_last else "│   ")
+            if is_root:
+                child_prefix = ""
+            for idx, child in enumerate(span.children):
+                is_last_child = idx == (len(span.children) - 1)
+                _walk(child, child_prefix, is_last_child, False)
 
         _walk(self.root_span, is_root=True)
         return "\n".join(lines)
 
-    def print_tree(self) -> None:
-        print(self.render_tree())
-
-    def export_jsonl(self, file_path: str) -> None:
-        os.makedirs(os.path.dirname(os.path.abspath(file_path)), exist_ok=True)
-        with open(file_path, "a", encoding="utf-8") as f:
+    def export_jsonl(self, filepath: str) -> None:
+        """Appends trace tree to a local JSONL log file for offline profiling."""
+        with open(filepath, "a", encoding="utf-8") as f:
             f.write(json.dumps(self.root_span.to_dict(), ensure_ascii=False) + "\n")
 
-def traceable(name: Optional[str] = None):
-    """Decorator to automatically trace a function execution."""
+    def get_flat_spans(self) -> List[TraceSpan]:
+        flat: List[TraceSpan] = []
+        def _flatten(span: TraceSpan):
+            flat.append(span)
+            for c in span.children:
+                _flatten(c)
+        _flatten(self.root_span)
+        return flat
+
+def traceable(name: Optional[str] = None) -> Callable[..., Any]:
+    """Decorator to automatically wrap a function or method in a trace span."""
     def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
         span_name = name or fn.__name__
         @functools.wraps(fn)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            tracer = getattr(wrapper, "_tracer", None)
-            if not tracer:
+            tracer = Tracer(root_name=span_name)
+            with tracer.trace(span_name, inputs={"args": str(args), "kwargs": str(kwargs)}):
                 return fn(*args, **kwargs)
-            with tracer.trace(span_name, inputs={"args": args, "kwargs": kwargs}) as s:
-                res = fn(*args, **kwargs)
-                s.finish(outputs=res)
-                return res
         return wrapper
     return decorator

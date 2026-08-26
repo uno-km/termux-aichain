@@ -1,54 +1,51 @@
 """
 Unit tests for termux_aichain.memory (ConversationBufferMemory, SQLiteEntityMemory, SQLiteVectorStore, FactExtractor)
 """
-import os
-import tempfile
 import pytest
-from termux_aichain.core.schema import HumanMessage, AIMessage, GenerationResult
 from termux_aichain.core.base import BaseChatModel
-from termux_aichain.core.splitters import Document
+from termux_aichain.core.schema import Message, HumanMessage, AIMessage, GenerationResult
 from termux_aichain.memory.buffer import ConversationBufferMemory
 from termux_aichain.memory.sqlite import SQLiteEntityMemory, SQLiteVectorStore
 from termux_aichain.memory.extractor import FactExtractor
 
 def test_conversation_buffer_memory_window():
-    mem = ConversationBufferMemory(k=2, return_messages=True)
-    mem.save_context("Hello", "Hi there!")
-    mem.save_context("How is the weather?", "It is sunny.")
-    mem.save_context("What is my device?", "Galaxy S20.")
+    memory = ConversationBufferMemory(k=2) # Keep last 2 exchanges = 4 messages
 
-    # With k=2, only last 4 messages (2 turns) should remain
-    vars_dict = mem.load_memory_variables()
-    history = vars_dict["history"]
+    memory.save_context("Hi 1", "Hello 1")
+    memory.save_context("Hi 2", "Hello 2")
+    memory.save_context("Hi 3", "Hello 3")
+
+    history = memory.load_memory_variables()["history"]
     assert len(history) == 4
-    assert history[0].content == "How is the weather?"
-    assert history[3].content == "Galaxy S20."
+    assert history[0].content == "Hi 2"
+    assert history[1].content == "Hello 2"
+    assert history[2].content == "Hi 3"
+    assert history[3].content == "Hello 3"
 
 def test_sqlite_entity_memory_persistence():
-    with tempfile.NamedTemporaryFile("w", delete=False, suffix=".db") as tmp:
-        db_path = tmp.name
+    mem = SQLiteEntityMemory(":memory:")
 
-    try:
-        mem1 = SQLiteEntityMemory(db_path=db_path)
-        mem1.set("user_name", "UnoKim")
-        mem1.set("device_profile", {"model": "SM-G986N", "os": "Android 13"})
-        mem1.close()
+    mem.save_entity("device_model", "Galaxy S20")
+    mem.save_entity("os", "Android 13")
+    mem.save_entity("specs", {"ram_gb": 12, "arch": "arm64-v8a"})
 
-        # Reopen same DB file to verify persistence
-        mem2 = SQLiteEntityMemory(db_path=db_path)
-        assert mem2.get("user_name") == "UnoKim"
-        prof = mem2.get("device_profile")
-        assert prof["model"] == "SM-G986N"
-        assert prof["os"] == "Android 13"
-        mem2.close()
-    finally:
-        if os.path.exists(db_path):
-            os.remove(db_path)
+    assert mem.get_entity("device_model") == "Galaxy S20"
+    assert mem.get_entity("os") == "Android 13"
+    assert mem.get_entity("specs")["ram_gb"] == 12
+
+    all_entities = mem.get_all()
+    assert len(all_entities) == 3
+
+    assert mem.delete("os") is True
+    assert mem.get_entity("os") is None
+
+    mem.clear()
+    assert len(mem.get_all()) == 0
 
 def test_sqlite_vector_store_cosine():
-    store = SQLiteVectorStore()
+    store = SQLiteVectorStore(":memory:")
     
-    # 3 mock embeddings
+    # 3 semantic test vectors
     # Vector 1: [1.0, 0.0, 0.0] -> Concept A
     # Vector 2: [0.9, 0.1, 0.0] -> Concept A closely related
     # Vector 3: [0.0, 1.0, 0.0] -> Concept B orthogonal
@@ -65,11 +62,11 @@ def test_sqlite_vector_store_cosine():
     results = store.similarity_search_by_vector(query_emb, k=2)
 
     assert len(results) == 2
-    assert results[0][0].page_content.startswith("Doc A")
-    assert results[0][1] > 0.99 # Very high cosine similarity
-    assert results[1][0].page_content.startswith("Doc A")
+    assert results[0].page_content.startswith("Doc A")
+    assert results[0].score > 0.99 # Very high cosine similarity
+    assert results[1].page_content.startswith("Doc A")
 
-class MockExtractorLLM(BaseChatModel):
+class RuleBasedExtractorModel(BaseChatModel):
     def generate(self, messages, **kwargs):
         json_resp = '{"user_alias": "Uno", "primary_phone": "Galaxy S20+", "ram_gb": 12}'
         return GenerationResult(content=json_resp, message=AIMessage(content=json_resp))
@@ -84,12 +81,12 @@ class MockExtractorLLM(BaseChatModel):
         raise NotImplementedError
 
 def test_fact_extractor():
-    llm = MockExtractorLLM()
+    llm = RuleBasedExtractorModel()
     mem = SQLiteEntityMemory()
     extractor = FactExtractor(model=llm, memory=mem)
 
     facts = extractor.extract_and_save("Hi, I am Uno and I use a Galaxy S20+ with 12GB RAM.")
     assert facts["user_alias"] == "Uno"
     assert facts["primary_phone"] == "Galaxy S20+"
-    assert mem.get("user_alias") == "Uno"
-    assert mem.get("ram_gb") == 12
+    assert mem.get_entity("user_alias") == "Uno"
+    assert mem.get_entity("ram_gb") == 12

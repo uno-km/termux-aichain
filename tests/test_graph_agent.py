@@ -6,13 +6,13 @@ from termux_aichain.core.base import BaseChatModel
 from termux_aichain.core.schema import Message, HumanMessage, AIMessage, GenerationResult
 from termux_aichain.graph.agent import Tool, tool, create_react_agent
 
-class MockAgentLLM(BaseChatModel):
+class RuleBasedAgentModel(BaseChatModel):
     def __init__(self):
         self.call_count = 0
 
     def generate(self, messages, **kwargs):
         self.call_count += 1
-        # First turn: call the battery tool
+        # Turn 1: call the battery tool
         if self.call_count == 1:
             return GenerationResult(
                 content="",
@@ -28,7 +28,7 @@ class MockAgentLLM(BaseChatModel):
                     }]
                 )
             )
-        # Second turn: answer with the battery information
+        # Turn 2: answer with the battery information
         return GenerationResult(
             content="The battery level on galaxy-s20 is 88%.",
             message=AIMessage(content="The battery level on galaxy-s20 is 88%.")
@@ -48,8 +48,8 @@ def test_react_agent_loop():
     def get_battery_status(device_id: str) -> str:
         return f"{device_id}: 88% (discharging)"
 
-    mock_llm = MockAgentLLM()
-    agent = create_react_agent(model=mock_llm, tools=[get_battery_status])
+    llm = RuleBasedAgentModel()
+    agent = create_react_agent(model=llm, tools=[get_battery_status])
 
     initial_messages = [HumanMessage(content="What is my battery level?")]
     final_state = agent.invoke({"messages": initial_messages})

@@ -2,14 +2,14 @@
   "total_score": 100.0,
   "percentage": 100.0,
   "grade": "A+ (PERFECT ZERO-DEFECT)",
-  "duration_sec": 0.7679247856140137,
+  "duration_sec": 0.7411520481109619,
   "items": [
     {
       "category": "1. Installation & Zero-Dep",
-      "name": "Zero-Dep Standard Imports & Version 1.0.0",
+      "name": "Zero-Dep Standard Imports & Version Schema",
       "allocated": 5.0,
       "awarded": 5.0,
-      "duration_ms": 127.75259999762056,
+      "duration_ms": 134.85210000362713,
       "passed": true,
       "error": null
     },
@@ -18,7 +18,7 @@
       "name": "Micro Disk Footprint (< 500KB)",
       "allocated": 5.0,
       "awarded": 5.0,
-      "duration_ms": 3.014899994013831,
+      "duration_ms": 3.4914999996544793,
       "passed": true,
       "error": null
     },
@@ -27,7 +27,7 @@
       "name": "Schema Serialization Integrity",
       "allocated": 5.0,
       "awarded": 5.0,
-      "duration_ms": 0.015199999324977398,
+      "duration_ms": 0.024199995095841587,
       "passed": true,
       "error": null
     },
@@ -36,7 +36,7 @@
       "name": "Pipe Composition (|) & Json Parser",
       "allocated": 5.0,
       "awarded": 5.0,
-      "duration_ms": 0.07370000093942508,
+      "duration_ms": 0.10140000085812062,
       "passed": true,
       "error": null
     },
@@ -45,7 +45,7 @@
       "name": "Recursive Text Splitter Hierarchy",
       "allocated": 5.0,
       "awarded": 5.0,
-      "duration_ms": 0.08420000085607171,
+      "duration_ms": 0.09539999882690609,
       "passed": true,
       "error": null
     },
@@ -54,7 +54,7 @@
       "name": "PromptTemplate Literal Escaping",
       "allocated": 5.0,
       "awarded": 5.0,
-      "duration_ms": 0.01080000220099464,
+      "duration_ms": 0.012600008631125093,
       "passed": true,
       "error": null
     },
@@ -63,7 +63,7 @@
       "name": "Cyclic StateGraph Dynamic Routing",
       "allocated": 7.5,
       "awarded": 7.5,
-      "duration_ms": 0.018200000340584666,
+      "duration_ms": 0.020799998310394585,
       "passed": true,
       "error": null
     },
@@ -72,7 +72,7 @@
       "name": "ReAct Autonomous Tool Loop",
       "allocated": 7.5,
       "awarded": 7.5,
-      "duration_ms": 0.07869999535614625,
+      "duration_ms": 0.3530999965732917,
       "passed": true,
       "error": null
     },
@@ -81,7 +81,7 @@
       "name": "Rolling ConversationBuffer Window",
       "allocated": 5.0,
       "awarded": 5.0,
-      "duration_ms": 0.012099997547920793,
+      "duration_ms": 0.017700003809295595,
       "passed": true,
       "error": null
     },
@@ -90,7 +90,7 @@
       "name": "SQLite Entity Memory ACID Persistence",
       "allocated": 5.0,
       "awarded": 5.0,
-      "duration_ms": 0.43729999742936343,
+      "duration_ms": 0.524500006577,
       "passed": true,
       "error": null
     },
@@ -99,7 +99,7 @@
       "name": "MicroVectorStore Pure Cosine Precision",
       "allocated": 5.0,
       "awarded": 5.0,
-      "duration_ms": 0.2358999990974553,
+      "duration_ms": 0.30220000189729035,
       "passed": true,
       "error": null
     },
@@ -108,7 +108,7 @@
       "name": "1-Line REST, SSE & Single-File Web Dashboard UI",
       "allocated": 15.0,
       "awarded": 15.0,
-      "duration_ms": 533.4035999985645,
+      "duration_ms": 552.8091000014683,
       "passed": true,
       "error": null
     },
@@ -117,7 +117,7 @@
       "name": "Native Hardware Tooling (Battery, Sensors, GPS)",
       "allocated": 7.5,
       "awarded": 7.5,
-      "duration_ms": 74.66489999933401,
+      "duration_ms": 29.279099995619617,
       "passed": true,
       "error": null
     },
@@ -126,7 +126,7 @@
       "name": "uno-km Ecosystem Integrations (STT, Diffusion, Playwright)",
       "allocated": 7.5,
       "awarded": 7.5,
-      "duration_ms": 27.19020000222372,
+      "duration_ms": 19.00210000167135,
       "passed": true,
       "error": null
     },
@@ -135,7 +135,7 @@
       "name": "Hardware Fine-Tuning & Full-Spectrum Sampling",
       "allocated": 10.0,
       "awarded": 10.0,
-      "duration_ms": 0.039200000173877925,
+      "duration_ms": 0.04020000051241368,
       "passed": true,
       "error": null
     }

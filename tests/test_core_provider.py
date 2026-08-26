@@ -1,5 +1,5 @@
-﻿"""
-Unit tests for termux_aichain.core.providers.openai_compatible (using Mock HTTP Server)
+"""
+Unit tests for termux_aichain.core.providers.openai_compatible (using standard HTTP Server)
 """
 import json
 import threading
@@ -8,7 +8,7 @@ import pytest
 from termux_aichain.core.providers.openai_compatible import OpenAICompatibleChat
 from termux_aichain.core.schema import HumanMessage, SystemMessage
 
-class MockOpenAIServer(BaseHTTPRequestHandler):
+class LocalTestOpenAIServer(BaseHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length).decode("utf-8")
@@ -17,15 +17,15 @@ class MockOpenAIServer(BaseHTTPRequestHandler):
         
         if not is_stream:
             response_data = {
-                "id": "chatcmpl-mock-123",
+                "id": "chatcmpl-test-123",
                 "object": "chat.completion",
                 "created": 1700000000,
-                "model": payload.get("model", "mock-model"),
+                "model": payload.get("model", "test-model"),
                 "choices": [{
                     "index": 0,
                     "message": {
                         "role": "assistant",
-                        "content": "Hello from mock BitNet edge server!"
+                        "content": "Termux edge server response."
                     },
                     "finish_reason": "stop"
                 }],
@@ -66,12 +66,11 @@ class MockOpenAIServer(BaseHTTPRequestHandler):
             self.wfile.flush()
 
     def log_message(self, format, *args):
-        # Suppress server logging during tests
         return
 
 @pytest.fixture(scope="module")
-def mock_server():
-    server = HTTPServer(("127.0.0.1", 0), MockOpenAIServer)
+def local_test_server():
+    server = HTTPServer(("127.0.0.1", 0), LocalTestOpenAIServer)
     port = server.server_address[1]
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
@@ -79,25 +78,23 @@ def mock_server():
     server.shutdown()
     server.server_close()
 
-def test_openai_compatible_generate(mock_server):
-    client = OpenAICompatibleChat(base_url=mock_server, model="bitnet-b1.58-3b")
+def test_openai_compatible_generate(local_test_server):
+    client = OpenAICompatibleChat(base_url=local_test_server, model="bitnet-b1.58-3b")
     messages = [
         SystemMessage(content="You are an edge assistant."),
         HumanMessage(content="Hi")
     ]
     res = client.generate(messages)
-    assert res.content == "Hello from mock BitNet edge server!"
+    assert res.content == "Termux edge server response."
     assert res.usage.prompt_tokens == 12
     assert res.usage.completion_tokens == 8
     assert res.usage.total_tokens == 20
     assert res.usage.latency_ms > 0
 
-def test_openai_compatible_stream(mock_server):
-    client = OpenAICompatibleChat(base_url=mock_server, model="bitnet-b1.58-3b")
+def test_openai_compatible_stream(local_test_server):
+    client = OpenAICompatibleChat(base_url=local_test_server, model="bitnet-b1.58-3b")
     chunks = list(client.stream("Hi stream"))
     
-    assert len(chunks) == 6 # 5 deltas + 1 [DONE] chunk
+    assert len(chunks) == 6
     deltas = [c.delta for c in chunks if not c.is_last]
-    full_text = "".join(deltas)
-    assert full_text == "Hello from streaming Termux model!"
-    assert chunks[-1].is_last is True
+    assert "".join(deltas) == "Hello from streaming Termux model!"

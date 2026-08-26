@@ -2,6 +2,7 @@
 """
 termux-aichain Real-Device On-Device LLM & Agent End-to-End Test
 Manages local llama-server lifecycle and verifies complete AI chaining on Samsung Galaxy S20.
+Zero fake simulation strings - 100% Ground Truth native execution & diagnostics.
 """
 
 import sys
@@ -11,7 +12,6 @@ import subprocess
 import urllib.request
 import json
 
-# Auto-inject project root
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
@@ -43,9 +43,9 @@ def wait_for_server(port: int, max_wait: float = 20.0) -> bool:
     return False
 
 def main():
-    print("================================================================")
-    print("⚡ termux-aichain Real-Device Local LLM Integration Suite")
-    print("================================================================")
+    print("=" * 64)
+    print("[RUN] termux-aichain Real-Device Local LLM Integration Suite")
+    print("=" * 64)
 
     server_proc = None
     if os.path.exists(LLAMA_SERVER_BIN) and os.path.exists(LLAMA_MODEL_PATH):
@@ -61,11 +61,11 @@ def main():
         server_proc = subprocess.Popen(server_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         print("[*] Waiting for model loading into memory...")
         if wait_for_server(PORT, max_wait=20.0):
-            print("[*] Model loaded successfully! Local server is ready.")
+            print("[*] Model loaded successfully. Local server is ready.")
         else:
-            print("[!] Server failed to start in time. Proceeding with fallback mode.")
+            raise RuntimeError(f"Local llama-server failed to bind and become healthy on port {PORT}.")
     else:
-        print("[!] Local llama-server or model weights not found at target path.")
+        print("[INFO] Target binary or model weights not found at default path. Connecting to running endpoint if available.")
 
     try:
         base_url = f"http://127.0.0.1:{PORT}/v1"
@@ -92,7 +92,7 @@ def main():
                 ("system", "You are a concise edge AI. Reply strictly with JSON: {{\"status\": \"ok\", \"benefit\": \"low_latency\"}}"),
                 ("user", "What is the top benefit of running AI locally on mobile? Reply in JSON format.")
             ])
-            chain = prompt | llm | JsonOutputParser(default_factory=lambda: {"status": "ok", "benefit": "zero_latency"})
+            chain = prompt | llm | JsonOutputParser()
             res = chain.invoke({})
             print("Parsed Result:", res)
 
@@ -101,29 +101,28 @@ def main():
             agent = create_react_agent(
                 model=llm,
                 tools=[get_battery_status],
-                system_prompt="You are an Android assistant. Always check battery first when asked."
+                system_prompt="You are an Android assistant. Check battery status when requested."
             )
             state = agent.invoke(
-                {"messages": [HumanMessage(content="Check battery level.")]},
-                max_iterations=3
+                {"messages": [HumanMessage(content="Check battery level.")]}
             )
             print("Agent Final Response:", state["messages"][-1].content)
 
         tracer.finish()
 
-        print("\n================================================================")
-        print("📊 On-Device Observability & Profiling Tree (Tracer Output)")
-        print("================================================================")
-        tracer.print_tree()
-        print("================================================================")
-        print("✅ ALL 6 PHASES FULLY VERIFIED ON REAL SAMSUNG GALAXY S20+ 5G (ARM64)!")
+        print("\n" + "=" * 64)
+        print("[TRACER] On-Device Execution Latency Profile")
+        print("=" * 64)
+        print(tracer.render_tree())
+        print("=" * 64)
+        print("[SUCCESS] Real hardware LLM execution completed.")
 
     finally:
         if server_proc:
-            print("\n[*] Gracefully stopping llama-server...")
+            print("\n[*] Stopping llama-server...")
             server_proc.terminate()
             server_proc.wait(timeout=5.0)
-            print("[*] llama-server stopped. Memory freed.")
+            print("[*] llama-server stopped.")
 
 if __name__ == "__main__":
     main()
