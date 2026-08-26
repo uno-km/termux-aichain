@@ -20,7 +20,7 @@ import subprocess
 import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from termux_aichain import __version__, serve, PromptTemplate, LocalServerConfig, LlamaCppServer
+from termux_aichain import __version__, serve, PromptTemplate, LocalServerConfig, LlamaCppServer, LocalServerManager
 
 MODELS_REGISTRY = {
     "llama-3.2-3b": {
