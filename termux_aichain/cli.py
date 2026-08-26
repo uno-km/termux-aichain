@@ -296,6 +296,19 @@ def cmd_status(verbose: bool = False) -> None:
             print(f"Reason:   {str(ex)}")
         print("Hint:     Run 'termux-aichain run qwen-2.5-1.5b' to start local AI.")
 
+def quarantine_lock(lock_file: Path, reason: str = "unverifiable") -> Path:
+    """Safely isolates an unverifiable or malformed lock file without data loss."""
+    quarantine_dir = lock_file.parent / "quarantine"
+    quarantine_dir.mkdir(parents=True, exist_ok=True)
+    suffix = f"{time.time_ns()}-{os.getpid()}"
+    dest = quarantine_dir / f"{lock_file.name}.{suffix}.quarantine"
+    try:
+        shutil.move(str(lock_file), str(dest))
+        (quarantine_dir / f"{lock_file.name}.{suffix}.reason.txt").write_text(reason, encoding="utf-8")
+    except Exception:
+        pass
+    return dest
+
 def cmd_stop() -> None:
     """Safely stops locally running model server daemon with strict PID ownership verification."""
     from termux_aichain.core.process_identity import verify_managed_process_ownership
@@ -318,15 +331,15 @@ def cmd_stop() -> None:
                             pass
                         lock_file.unlink(missing_ok=True)
                     else:
-                        # Fail-closed: Quarantine unverifiable lock to prevent state confusion
-                        quarantine_dir = lock_dir / "quarantine"
-                        quarantine_dir.mkdir(parents=True, exist_ok=True)
-                        shutil.move(str(lock_file), str(quarantine_dir / lock_file.name))
+                        # Fail-closed: Quarantine mismatched lock to preserve state & prevent confusion
+                        quarantine_lock(lock_file, reason="ownership_verification_failed")
                         quarantined = True
                 else:
-                    lock_file.unlink(missing_ok=True)
-            except Exception:
-                lock_file.unlink(missing_ok=True)
+                    quarantine_lock(lock_file, reason="missing_or_invalid_pid")
+                    quarantined = True
+            except Exception as exc:
+                quarantine_lock(lock_file, reason=f"malformed_json_{type(exc).__name__}")
+                quarantined = True
 
     if stopped:
         print("✓ Local model server stopped successfully.")
@@ -347,6 +360,7 @@ def cmd_run(model_name: str, replace: bool = False) -> None:
     if target in MODELS_REGISTRY:
         try:
             model_file = download_verified_model(target)
+            trust_level = "registry-sha256-verified"
         except Exception as ex:
             print(f"[-] Model verification failed: {str(ex)}")
             return
@@ -354,7 +368,7 @@ def cmd_run(model_name: str, replace: bool = False) -> None:
         if not os.path.isfile(target):
             print(f"[-] Target path '{target}' is not a regular file.")
             return
-        # Verify GGUF magic header
+        # Verify GGUF magic header (Format screening only)
         try:
             with open(target, "rb") as f_chk:
                 if f_chk.read(4) != b"GGUF":
@@ -364,13 +378,14 @@ def cmd_run(model_name: str, replace: bool = False) -> None:
             print(f"[-] Cannot read file '{target}': {str(ex)}")
             return
         model_file = target
+        trust_level = "user-file-format-only (Warning: No registry checksum or signed manifest)"
     else:
         print(f"[-] Unknown model '{model_name}'. Available options:")
         for k, v in MODELS_REGISTRY.items():
             print(f"    - {k} ({v['size_desc']})")
         return
 
-    print("✓ Model verified")
+    print(f"✓ Model verified [Trust Level: {trust_level}]")
 
     # Check if existing server is running with strict identity and model matching
     endpoint = "http://127.0.0.1:8080"
@@ -380,7 +395,7 @@ def cmd_run(model_name: str, replace: bool = False) -> None:
         ServerIdentityVerifier.verify(
             endpoint_url=endpoint,
             timeout_seconds=1.0,
-            expected_protocol_version="1.0",
+            expected_service="llama-server",
             expected_model_id=expected_model_id
         )
         server_alive = True
@@ -413,11 +428,21 @@ def cmd_run(model_name: str, replace: bool = False) -> None:
         try:
             print("[*] Starting local server engine...")
             mgr.start(wait_ready=True, timeout=30.0)
-            print("✓ Local server started successfully")
+
+            # Post-Spawn Verification: Ensure newly started instance strictly satisfies identity contract
+            ServerIdentityVerifier.verify(
+                endpoint_url=endpoint,
+                timeout_seconds=5.0,
+                expected_service="llama-server",
+                expected_model_id=expected_model_id
+            )
+
+            print("✓ Local server started & strictly verified")
             print(f"Endpoint: {endpoint}")
             print(f"Model:    {target}")
         except Exception as ex:
-            print(f"[-] Failed to start server: {str(ex)}")
+            print(f"[-] Server startup/verification failed: {str(ex)}")
+            mgr.stop()
             return
 
     # Interactive Chat Session

@@ -99,8 +99,43 @@ def validate_loopback_endpoint(endpoint: str) -> None:
     if not addr.is_loopback:
         raise ServerConnectionRefusedError(f"Endpoint address '{addr}' violates 'loopback_only' transport policy.")
 
+@dataclass(frozen=True)
+class ServerIdentityProfile:
+    """Capability and contract profile for diverse local server backends."""
+    service: str
+    require_protocol_version: bool = False
+    expected_protocol_version: Optional[str] = None
+    require_model_endpoint: bool = False
+
+SERVER_PROFILES: Dict[str, ServerIdentityProfile] = {
+    "termux-aichain": ServerIdentityProfile(
+        service="termux-aichain",
+        require_protocol_version=True,
+        expected_protocol_version="1.0",
+        require_model_endpoint=False
+    ),
+    "llama-server": ServerIdentityProfile(
+        service="llama-server",
+        require_protocol_version=False,
+        expected_protocol_version=None,
+        require_model_endpoint=True
+    ),
+    "bitnet-server": ServerIdentityProfile(
+        service="bitnet-server",
+        require_protocol_version=False,
+        expected_protocol_version=None,
+        require_model_endpoint=True
+    ),
+    "openai-compatible": ServerIdentityProfile(
+        service="openai-compatible",
+        require_protocol_version=False,
+        expected_protocol_version=None,
+        require_model_endpoint=False
+    ),
+}
+
 class ServerIdentityVerifier:
-    """P0-2 & P0-3: Fail-closed identity verification with exact service classification and constant-time hashing."""
+    """P0-2 & P0-3: Fail-closed identity verification with exact service classification and capability profiles."""
 
     @staticmethod
     def verify(
@@ -146,19 +181,23 @@ class ServerIdentityVerifier:
             else:
                 raise ServerProtocolMismatchError(f"Incompatible or missing service status (status='{status_field}').")
 
-        allowed_services = {"llama-server", "bitnet-server", "termux-aichain", "openai-compatible"}
+        allowed_services = set(SERVER_PROFILES.keys())
         if service_id not in allowed_services:
             raise ServerProtocolMismatchError(f"Incompatible service identity '{service_id}'. Allowed: {sorted(allowed_services)}")
 
         if expected_service and service_id != expected_service:
             raise ServerProtocolMismatchError(f"Service mismatch: expected '{expected_service}', got '{service_id}'.")
 
+        # Resolve capability profile requirements
+        profile = SERVER_PROFILES.get(service_id)
+        effective_expected_protocol = expected_protocol_version or (profile.expected_protocol_version if profile and profile.require_protocol_version else None)
+
         raw_protocol = payload.get("protocolVersion") or payload.get("version")
-        if expected_protocol_version and not raw_protocol:
+        if effective_expected_protocol and not raw_protocol:
             raise ServerProtocolMismatchError("Server did not report a protocol version (Fail-Closed).")
         proto_ver = str(raw_protocol or "")
-        if expected_protocol_version and proto_ver != expected_protocol_version:
-            raise ServerProtocolMismatchError(f"Protocol version mismatch: expected '{expected_protocol_version}', got '{proto_ver}'.")
+        if effective_expected_protocol and proto_ver != effective_expected_protocol:
+            raise ServerProtocolMismatchError(f"Protocol version mismatch: expected '{effective_expected_protocol}', got '{proto_ver}'.")
 
         model_info = payload.get("model", {})
         if isinstance(model_info, str):

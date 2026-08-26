@@ -110,3 +110,45 @@ def test_cmd_run_rejects_incompatible_server(monkeypatch, tmp_path, capsys):
     cmd_run(str(m), replace=False)
     out = capsys.readouterr().out
     assert "occupied by an incompatible server" in out
+
+def test_cmd_run_newly_started_server_is_identity_verified(monkeypatch, tmp_path, capsys):
+    import urllib.error
+    from termux_aichain.cli import cmd_run
+    from termux_aichain.core.providers.local_server import LocalServerManager
+
+    # 1. Initial check: server is not alive (ServerConnectionRefusedError)
+    call_count = 0
+    class DynamicOpener:
+        def open(self, req, *args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                # Pre-spawn probe -> Offline
+                raise urllib.error.URLError("connection refused")
+            else:
+                # Post-spawn probe -> Online but reporting WRONG model identity
+                class FakePostSpawnResp:
+                    status = 200
+                    def read(self, size): return b'{"status":"ok","service":"llama-server","model":{"id":"hijacked-or-wrong.gguf"}}'
+                    def __enter__(self): return self
+                    def __exit__(self, *args): pass
+                return FakePostSpawnResp()
+
+    monkeypatch.setattr("urllib.request.build_opener", lambda *args: DynamicOpener())
+    monkeypatch.setattr("shutil.which", lambda name: f"/fake/{name}")
+    stopped_called = False
+    monkeypatch.setattr(LocalServerManager, "start", lambda self, **kwargs: None)
+    def mock_stop(self):
+        nonlocal stopped_called
+        stopped_called = True
+    monkeypatch.setattr(LocalServerManager, "stop", mock_stop)
+
+    # Valid model file
+    m = tmp_path / "expected_model.gguf"
+    m.write_bytes(b"GGUF_VALID_HEADER_DATA")
+
+    cmd_run(str(m), replace=False)
+    out = capsys.readouterr().out
+    assert "Server startup/verification failed" in out
+    assert "Model ID mismatch" in out
+    assert stopped_called is True
