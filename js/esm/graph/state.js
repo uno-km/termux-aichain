@@ -28,6 +28,10 @@ export class StateGraph {
         this.entryPoint = nodeName;
         return this;
     }
+    setFinishPoint(nodeName) {
+        this.edges.set(nodeName, END);
+        return this;
+    }
     addConditionalEdges(fromNode, condition, pathMap) {
         this.conditionalEdges.set(fromNode, { condition, pathMap });
         return this;
@@ -70,7 +74,7 @@ export class CompiledGraph {
             const condEdge = this.conditionalEdges.get(currentNode);
             if (condEdge) {
                 const targetKey = await Promise.resolve(condEdge.condition(currentState));
-                currentNode = condEdge.pathMap[targetKey];
+                currentNode = condEdge.pathMap ? condEdge.pathMap[targetKey] : targetKey;
             }
             else if (this.edges.has(currentNode)) {
                 currentNode = this.edges.get(currentNode);
@@ -102,7 +106,7 @@ export class CompiledGraph {
             const condEdge = this.conditionalEdges.get(currentNode);
             if (condEdge) {
                 const targetKey = await Promise.resolve(condEdge.condition(currentState));
-                currentNode = condEdge.pathMap[targetKey];
+                currentNode = condEdge.pathMap ? condEdge.pathMap[targetKey] : targetKey;
             }
             else if (this.edges.has(currentNode)) {
                 currentNode = this.edges.get(currentNode);

@@ -12,7 +12,7 @@ export type ConditionFn<T = any> = (state: T) => Promise<string> | string;
 
 export interface ConditionalEdge<T = any> {
   condition: ConditionFn<T>;
-  pathMap: Record<string, string>;
+  pathMap?: Record<string, string>;
 }
 
 export class StateGraph<T = Record<string, any>> {
@@ -42,7 +42,12 @@ export class StateGraph<T = Record<string, any>> {
     return this;
   }
 
-  addConditionalEdges(fromNode: string, condition: ConditionFn<T>, pathMap: Record<string, string>): this {
+  setFinishPoint(nodeName: string): this {
+    this.edges.set(nodeName, END);
+    return this;
+  }
+
+  addConditionalEdges(fromNode: string, condition: ConditionFn<T>, pathMap?: Record<string, string>): this {
     this.conditionalEdges.set(fromNode, { condition, pathMap });
     return this;
   }
@@ -102,7 +107,7 @@ export class CompiledGraph<T = Record<string, any>> {
       const condEdge: ConditionalEdge<T> | undefined = this.conditionalEdges.get(currentNode);
       if (condEdge) {
         const targetKey: string = await Promise.resolve(condEdge.condition(currentState));
-        currentNode = condEdge.pathMap[targetKey];
+        currentNode = condEdge.pathMap ? condEdge.pathMap[targetKey] : targetKey;
       } else if (this.edges.has(currentNode)) {
         currentNode = this.edges.get(currentNode);
       } else {
@@ -138,7 +143,7 @@ export class CompiledGraph<T = Record<string, any>> {
       const condEdge: ConditionalEdge<T> | undefined = this.conditionalEdges.get(currentNode);
       if (condEdge) {
         const targetKey: string = await Promise.resolve(condEdge.condition(currentState));
-        currentNode = condEdge.pathMap[targetKey];
+        currentNode = condEdge.pathMap ? condEdge.pathMap[targetKey] : targetKey;
       } else if (this.edges.has(currentNode)) {
         currentNode = this.edges.get(currentNode);
       } else {
