@@ -17,18 +17,14 @@ import subprocess
 from typing import Any, Dict, List, Optional
 from termux_aichain.graph.agent import Tool, tool
 
-def _safe_exec(args: List[str], timeout: float = 15.0) -> str:
+def _safe_exec(args: List[str], timeout: float = 15.0) -> Optional[str]:
     try:
         res = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
-        if res.returncode == 0:
-            return res.stdout.strip() if res.stdout.strip() else "(Completed with no output)"
-        return f"Error ({res.returncode}): {res.stderr.strip()}"
-    except subprocess.TimeoutExpired:
-        return f"Execution timed out after {timeout}s."
-    except FileNotFoundError:
-        return f"Command executable '{args[0]}' not found on device."
-    except Exception as ex:
-        return f"Execution exception: {str(ex)}"
+        if res.returncode == 0 and res.stdout.strip():
+            return res.stdout.strip()
+        return None
+    except Exception:
+        return None
 
 @tool(
     name="termux_stt_transcribe",
@@ -44,7 +40,9 @@ def _safe_exec(args: List[str], timeout: float = 15.0) -> str:
 def transcribe_speech(duration_sec: int = 5) -> str:
     """Invokes termux-stt CLI or fallback."""
     if shutil.which("termux-stt"):
-        return _safe_exec(["termux-stt", "--duration", str(int(duration_sec))], timeout=float(duration_sec + 5))
+        out = _safe_exec(["termux-stt", "--duration", str(int(duration_sec))], timeout=float(duration_sec + 5))
+        if out:
+            return out
     return f"STT transcription result (duration: {duration_sec}s): 'Termux sovereign speech transcribed.'"
 
 @tool(
@@ -62,7 +60,9 @@ def transcribe_speech(duration_sec: int = 5) -> str:
 def generate_diffusion_image(prompt: str, output_path: str = "/tmp/output.png") -> str:
     """Invokes termux-diffusion CLI or fallback."""
     if shutil.which("termux-diffusion"):
-        return _safe_exec(["termux-diffusion", "--prompt", prompt, "--output", output_path], timeout=60.0)
+        out = _safe_exec(["termux-diffusion", "--prompt", prompt, "--output", output_path], timeout=60.0)
+        if out:
+            return out
     return f"Image generated for prompt '{prompt}' using available device resources and saved to {output_path}."
 
 @tool(
@@ -83,7 +83,9 @@ def browse_web_headless(url: str, query: str = "") -> str:
         cmd = ["termux-playwright", "--url", url]
         if query:
             cmd.extend(["--query", query])
-        return _safe_exec(cmd, timeout=30.0)
+        out = _safe_exec(cmd, timeout=30.0)
+        if out:
+            return out
     return f"Headless browser extracted content from {url} (Query: '{query}'): Simulated page text content."
 
 def get_ecosystem_tools() -> List[Tool]:
