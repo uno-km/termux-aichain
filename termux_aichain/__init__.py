@@ -57,6 +57,7 @@ from termux_aichain.graph.agent import (
 from termux_aichain.memory.buffer import ConversationBufferMemory
 from termux_aichain.memory.sqlite import SQLiteEntityMemory, SQLiteVectorStore
 from termux_aichain.memory.extractor import FactExtractor
+from termux_aichain.serve.server import AgentServer, serve
 
 __all__ = [
     "__version__",
@@ -95,4 +96,6 @@ __all__ = [
     "SQLiteEntityMemory",
     "SQLiteVectorStore",
     "FactExtractor",
+    "AgentServer",
+    "serve",
 ]
