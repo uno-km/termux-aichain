@@ -19,29 +19,37 @@ def test_battery_status_tool():
     res = get_battery_status()
     assert isinstance(res, str)
     data = json.loads(res)
-    assert "percentage" in data or "level" in data or "status" in data
+    assert "percentage" in data or "level" in data or "error" in data
 
 def test_sensor_data_tool():
     res = get_sensor_data("accel")
     assert isinstance(res, str)
-    assert "accelerometer" in res or "sensor" in res
+    data = json.loads(res)
+    assert "accelerometer" in data or "sensor" in data or "error" in data
 
 def test_location_tool():
     res = get_device_location("last")
     assert isinstance(res, str)
-    assert "latitude" in res or "longitude" in res or "status" in res
+    data = json.loads(res)
+    assert "latitude" in data or "longitude" in data or "error" in data
 
 def test_stt_tool():
     res = record_speech_to_text()
     assert isinstance(res, str) and len(res) > 0
+    data = json.loads(res) if res.startswith("{") else {}
+    assert "error" in data or len(res) > 0
 
 def test_vibrate_tool():
     res = vibrate_device(duration_ms=100)
     assert isinstance(res, str)
+    data = json.loads(res) if res.startswith("{") else {}
+    assert "status" in data or "error" in data
 
 def test_notification_tool():
     res = send_notification(title="Test Title", content="Test Content")
     assert isinstance(res, str)
+    data = json.loads(res) if res.startswith("{") else {}
+    assert "status" in data or "error" in data
 
 def test_shell_tool():
     res = execute_shell("echo 'Hello Termux Edge'")

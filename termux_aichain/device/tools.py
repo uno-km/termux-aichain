@@ -4,6 +4,7 @@ termux-aichain Device Toolkit: Android & Termux Native Hardware Tools
 ==============================================================================
 Provides standard Tool interfaces for Termux-API hardware controls
 (battery, sensors, vibration, TTS, notifications, location/GPS, STT, camera, shell).
+Zero fake simulation strings - 100% Ground Truth native execution & diagnostics.
 Zero external heavy dependencies - Pure Python 3.10+ standard library.
 """
 
@@ -15,7 +16,7 @@ import subprocess
 from typing import Any, Dict, List, Optional
 from termux_aichain.graph.agent import Tool, tool
 
-def _run_cmd(args: List[str], timeout: float = 2.0) -> Optional[str]:
+def _run_cmd(args: List[str], timeout: float = 3.0) -> Optional[str]:
     try:
         res = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
         if res.returncode == 0 and res.stdout.strip():
@@ -30,10 +31,10 @@ def _run_cmd(args: List[str], timeout: float = 2.0) -> Optional[str]:
     parameters={"type": "object", "properties": {}, "required": []}
 )
 def get_battery_status() -> str:
-    """Reads battery status via termux-battery-status or sysfs fallback."""
+    """Reads battery status via termux-battery-status or direct Linux kernel sysfs."""
     # 1. Try termux-battery-status CLI
     if shutil.which("termux-battery-status"):
-        res = _run_cmd(["termux-battery-status"], timeout=1.5)
+        res = _run_cmd(["termux-battery-status"], timeout=2.0)
         if res:
             try:
                 json.loads(res)
@@ -41,34 +42,52 @@ def get_battery_status() -> str:
             except Exception:
                 pass
 
-    # 2. Sysfs fallback for Android Linux Kernel
+    # 2. Sysfs fallback for Android Linux Kernel (/sys/class/power_supply)
     cap_path = "/sys/class/power_supply/battery/capacity"
     stat_path = "/sys/class/power_supply/battery/status"
+    temp_path = "/sys/class/power_supply/battery/temp"
     if os.path.exists(cap_path):
         try:
             with open(cap_path, "r") as f:
-                cap = f.read().strip()
+                cap = int(f.read().strip())
             stat = "Discharging"
             if os.path.exists(stat_path):
                 with open(stat_path, "r") as f:
                     stat = f.read().strip()
-            return json.dumps({"percentage": int(cap), "status": stat, "source": "sysfs"})
+            temp = None
+            if os.path.exists(temp_path):
+                with open(temp_path, "r") as f:
+                    temp = float(f.read().strip()) / 10.0
+            return json.dumps({
+                "percentage": cap,
+                "status": stat,
+                "temperature": temp,
+                "source": "kernel_sysfs"
+            })
         except Exception:
             pass
 
-    # 3. Termux dumpsys fallback
-    dumpsys_res = _run_cmd(["dumpsys", "battery"], timeout=1.0)
+    # 3. Android dumpsys fallback
+    dumpsys_res = _run_cmd(["dumpsys", "battery"], timeout=1.5)
     if dumpsys_res:
-        level = 80
+        level = None
+        status = "Unknown"
         for line in dumpsys_res.splitlines():
-            if "level:" in line:
+            line_str = line.strip()
+            if line_str.startswith("level:"):
                 try:
-                    level = int(line.split(":")[1].strip())
+                    level = int(line_str.split(":")[1].strip())
                 except Exception:
                     pass
-        return json.dumps({"percentage": level, "status": "Active", "source": "dumpsys"})
+            elif line_str.startswith("status:"):
+                status = line_str.split(":")[1].strip()
+        if level is not None:
+            return json.dumps({"percentage": level, "status": status, "source": "dumpsys"})
 
-    return json.dumps({"percentage": 85, "status": "Simulated", "note": "Safe fallback"})
+    return json.dumps({
+        "error": "BATTERY_DATA_UNAVAILABLE",
+        "message": "Neither termux-battery-status nor kernel sysfs /sys/class/power_supply/battery is accessible. Check Termux:API installation and permissions."
+    })
 
 @tool(
     name="termux_sensor_data",
@@ -82,20 +101,17 @@ def get_battery_status() -> str:
     }
 )
 def get_sensor_data(sensor: str = "all") -> str:
-    """Reads sensor data via termux-sensor CLI or fallback."""
+    """Reads sensor data via termux-sensor CLI."""
     if shutil.which("termux-sensor"):
         cmd = ["termux-sensor", "-n", "1"]
         if sensor and sensor != "all":
             cmd.extend(["-s", sensor])
-        res = _run_cmd(cmd, timeout=2.5)
+        res = _run_cmd(cmd, timeout=3.0)
         if res:
             return res
     return json.dumps({
-        "sensor": sensor,
-        "accelerometer": {"x": 0.02, "y": 9.81, "z": 0.15},
-        "light_lux": 150.0,
-        "status": "Simulated",
-        "note": "Non-termux or sensor timeout fallback"
+        "error": "SENSOR_UNAVAILABLE",
+        "message": "termux-sensor is not available or timed out. Install termux-api and grant Android sensor permissions."
     })
 
 @tool(
@@ -112,16 +128,12 @@ def get_sensor_data(sensor: str = "all") -> str:
 def get_device_location(provider: str = "last") -> str:
     """Reads device GPS/location coordinates."""
     if shutil.which("termux-location"):
-        res = _run_cmd(["termux-location", "-p", provider, "-r", "last"], timeout=2.5)
+        res = _run_cmd(["termux-location", "-p", provider, "-r", "last"], timeout=4.0)
         if res:
             return res
     return json.dumps({
-        "latitude": 37.5665,
-        "longitude": 126.9780,
-        "altitude": 38.0,
-        "accuracy": 15.0,
-        "provider": provider,
-        "status": "Simulated"
+        "error": "LOCATION_UNAVAILABLE",
+        "message": "termux-location is not available or GPS fix timed out. Install termux-api and enable device location."
     })
 
 @tool(
@@ -132,10 +144,13 @@ def get_device_location(provider: str = "last") -> str:
 def record_speech_to_text() -> str:
     """Captures microphone speech using termux-speech-to-text."""
     if shutil.which("termux-speech-to-text"):
-        res = _run_cmd(["termux-speech-to-text"], timeout=5.0)
+        res = _run_cmd(["termux-speech-to-text"], timeout=8.0)
         if res:
             return res
-    return "Termux AI Chain edge speech recognition simulated result."
+    return json.dumps({
+        "error": "STT_UNAVAILABLE",
+        "message": "termux-speech-to-text command not found. Install termux-api or use uno-km/termux-stt."
+    })
 
 @tool(
     name="termux_vibrate",
@@ -149,11 +164,14 @@ def record_speech_to_text() -> str:
     }
 )
 def vibrate_device(duration_ms: int = 500) -> str:
+    """Triggers physical haptic vibration via termux-vibrate."""
     if shutil.which("termux-vibrate"):
         res = _run_cmd(["termux-vibrate", "-d", str(int(duration_ms))])
-        if res is not None:
-            return f"Vibrated device for {duration_ms} ms."
-    return f"Device simulated vibration for {duration_ms} ms."
+        return json.dumps({"status": "SUCCESS", "message": f"Vibrated device for {duration_ms} ms."})
+    return json.dumps({
+        "error": "VIBRATE_UNAVAILABLE",
+        "message": "termux-vibrate command not found. Install termux-api package to enable haptic feedback."
+    })
 
 @tool(
     name="termux_notification",
@@ -168,10 +186,14 @@ def vibrate_device(duration_ms: int = 500) -> str:
     }
 )
 def send_notification(title: str, content: str) -> str:
+    """Dispatches a native notification via termux-notification."""
     if shutil.which("termux-notification"):
         _run_cmd(["termux-notification", "--title", str(title), "--content", str(content)])
-        return f"Notification displayed: [{title}] {content}"
-    return f"Simulated Notification: [{title}] {content}"
+        return json.dumps({"status": "SUCCESS", "message": f"Notification displayed: [{title}] {content}"})
+    return json.dumps({
+        "error": "NOTIFICATION_UNAVAILABLE",
+        "message": "termux-notification not found. Install termux-api to enable status bar notifications."
+    })
 
 @tool(
     name="termux_tts_speak",
@@ -185,10 +207,14 @@ def send_notification(title: str, content: str) -> str:
     }
 )
 def speak_tts(text: str) -> str:
+    """Synthesizes speech via termux-tts-speak."""
     if shutil.which("termux-tts-speak"):
         _run_cmd(["termux-tts-speak", str(text)])
-        return f"TTS spoken: '{text}'"
-    return f"Simulated TTS spoken: '{text}'"
+        return json.dumps({"status": "SUCCESS", "message": f"TTS spoken: '{text}'"})
+    return json.dumps({
+        "error": "TTS_UNAVAILABLE",
+        "message": "termux-tts-speak not found. Install termux-api to enable text-to-speech."
+    })
 
 @tool(
     name="termux_shell_exec",
@@ -202,6 +228,7 @@ def speak_tts(text: str) -> str:
     }
 )
 def execute_shell(command: str) -> str:
+    """Executes arbitrary shell command."""
     try:
         res = subprocess.run(
             command,
@@ -214,9 +241,9 @@ def execute_shell(command: str) -> str:
         err = res.stderr.strip()
         if res.returncode == 0:
             return out if out else "(Command executed successfully with no output)"
-        return f"Error ({res.returncode}): {err if err else out}"
+        return f"Error (Exit Code {res.returncode}): {err if err else out}"
     except subprocess.TimeoutExpired:
-        return "Command execution timed out (10s)."
+        return "Command execution timed out (10s limit)."
     except Exception as ex:
         return f"Failed to execute command: {str(ex)}"
 

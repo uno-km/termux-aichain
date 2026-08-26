@@ -9,8 +9,9 @@ test("Node.js: Device tools default suite", async () => {
 
   const batRes = await tools[0].func();
   const parsed = JSON.parse(batRes);
-  assert.ok("percentage" in parsed);
+  assert.ok("percentage" in parsed || "error" in parsed);
 
   const sensorRes = await tools[1].func({ sensor: "accel" });
-  assert.ok(sensorRes.includes("accelerometer"));
+  const parsedSensor = JSON.parse(sensorRes);
+  assert.ok("accelerometer" in parsedSensor || "error" in parsedSensor);
 });

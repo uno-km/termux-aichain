@@ -6,6 +6,7 @@ Provides standard Tool interfaces for uno-km edge modules:
 - termux-stt (Speech-to-Text)
 - termux-diffusion (Device Resource-based Image Generation)
 - termux-playwright (Headless Browser Automation)
+Zero fake simulation strings - 100% Ground Truth native execution & diagnostics.
 Zero external heavy dependencies - Pure Python 3.10+ standard library.
 """
 
@@ -39,18 +40,27 @@ def _safe_exec(args: List[str], timeout: float = 15.0) -> Optional[str]:
     }
 )
 def transcribe_speech(audio_path: Optional[str] = None, duration_sec: int = 5) -> str:
-    """Invokes termux-stt CLI or fallback."""
-    if shutil.which("termux-stt"):
-        cmd = ["termux-stt"]
-        if audio_path and os.path.exists(audio_path):
-            cmd.extend(["--input", audio_path])
-        else:
-            cmd.extend(["--duration", str(int(duration_sec))])
-        out = _safe_exec(cmd, timeout=float(duration_sec + 15))
-        if out:
-            return out
-    target_info = f"file '{audio_path}'" if audio_path else f"mic duration {duration_sec}s"
-    return f"STT transcription result ({target_info}): 'Termux sovereign speech transcribed.'"
+    """Invokes termux-stt CLI or returns explicit error status."""
+    stt_bin = shutil.which("termux-stt")
+    if not stt_bin:
+        return json.dumps({
+            "error": "TERMUX_STT_NOT_FOUND",
+            "message": "termux-stt CLI is not installed in PATH. Install via 'pip install termux-stt' or clone uno-km/termux-stt."
+        })
+
+    cmd = [stt_bin]
+    if audio_path and os.path.exists(audio_path):
+        cmd.extend(["--input", audio_path])
+    else:
+        cmd.extend(["--duration", str(int(duration_sec))])
+    
+    out = _safe_exec(cmd, timeout=float(duration_sec + 15))
+    if out:
+        return out
+    return json.dumps({
+        "error": "TRANSCRIPTION_FAILED",
+        "message": f"termux-stt executed but failed to generate transcript for target (audio: {audio_path}, duration: {duration_sec}s)."
+    })
 
 @tool(
     name="termux_diffusion_generate",
@@ -65,12 +75,21 @@ def transcribe_speech(audio_path: Optional[str] = None, duration_sec: int = 5) -
     }
 )
 def generate_diffusion_image(prompt: str, output_path: str = "/tmp/output.png") -> str:
-    """Invokes termux-diffusion CLI or fallback."""
-    if shutil.which("termux-diffusion"):
-        out = _safe_exec(["termux-diffusion", "--prompt", prompt, "--output", output_path], timeout=60.0)
-        if out:
-            return out
-    return f"Image generated for prompt '{prompt}' using available device resources and saved to {output_path}."
+    """Invokes termux-diffusion CLI or returns explicit error status."""
+    diff_bin = shutil.which("termux-diffusion")
+    if not diff_bin:
+        return json.dumps({
+            "error": "TERMUX_DIFFUSION_NOT_FOUND",
+            "message": "termux-diffusion CLI is not installed in PATH. Install via 'pip install termux-diffusion' or clone uno-km/termux-diffusion."
+        })
+
+    out = _safe_exec([diff_bin, "--prompt", prompt, "--output", output_path], timeout=60.0)
+    if out:
+        return out
+    return json.dumps({
+        "error": "IMAGE_GENERATION_FAILED",
+        "message": f"termux-diffusion failed to synthesize image for prompt '{prompt}'."
+    })
 
 @tool(
     name="termux_playwright_browse",
@@ -85,15 +104,24 @@ def generate_diffusion_image(prompt: str, output_path: str = "/tmp/output.png") 
     }
 )
 def browse_web_headless(url: str, query: str = "") -> str:
-    """Invokes termux-playwright CLI or fallback."""
-    if shutil.which("termux-playwright"):
-        cmd = ["termux-playwright", "--url", url]
-        if query:
-            cmd.extend(["--query", query])
-        out = _safe_exec(cmd, timeout=30.0)
-        if out:
-            return out
-    return f"Headless browser extracted content from {url} (Query: '{query}'): Simulated page text content."
+    """Invokes termux-playwright CLI or returns explicit error status."""
+    play_bin = shutil.which("termux-playwright")
+    if not play_bin:
+        return json.dumps({
+            "error": "TERMUX_PLAYWRIGHT_NOT_FOUND",
+            "message": "termux-playwright CLI is not installed in PATH. Install via 'pip install termux-playwright' or clone uno-km/termux-playwright."
+        })
+
+    cmd = [play_bin, "--url", url]
+    if query:
+        cmd.extend(["--query", query])
+    out = _safe_exec(cmd, timeout=30.0)
+    if out:
+        return out
+    return json.dumps({
+        "error": "BROWSE_FAILED",
+        "message": f"termux-playwright failed to extract web content from {url}."
+    })
 
 def get_ecosystem_tools() -> List[Tool]:
     """Returns the suite of uno-km edge ecosystem tools."""

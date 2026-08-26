@@ -96,7 +96,7 @@ def test_edge_vector_store_zero_norm():
     # Searching should NOT raise ZeroDivisionError
     res = vstore.similarity_search_by_vector([1.0, 0.0, 0.0], k=2)
     assert len(res) >= 1
-    assert res[0][0].page_content == "Normal Vector"
+    assert res[0].page_content == "Normal Vector"
 
 def test_edge_entity_memory_null_and_overwrite():
     mem = SQLiteEntityMemory(":memory:")
