@@ -45,8 +45,8 @@
     "url": "https://github.com/uno-km/termux-aichain/issues"
   },
   "homepage": "https://uno-km.vercel.app/lib/aichain/",
-  "dependencies": {},
   "devDependencies": {
+    "@types/node": "^26.3.0",
     "typescript": "^5.0.0"
   },
   "engines": {

@@ -3,12 +3,12 @@
 <div align="center">
 
 ```
- ?댿뻽?댿뻽?댿뻽?댿뻽?쀢뻽?댿뻽?댿뻽?댿뻽?쀢뻽?댿뻽?댿뻽?댿븮 ?댿뻽?댿븮   ?댿뻽?댿븮?댿뻽??  ?댿뻽?쀢뻽?댿븮  ?댿뻽??      ?댿뻽?댿뻽?댿븮 ?댿뻽???댿뻽?댿뻽?댿뻽?쀢뻽?댿븮  ?댿뻽???댿뻽?댿뻽?댿븮 ?댿뻽?쀢뻽?댿뻽??  ?댿뻽??
- ?싢븧?먥뻽?댿븫?먥븧?앪뻽?댿븫?먥븧?먥븧?앪뻽?댿븫?먥븧?댿뻽?쀢뻽?댿뻽?댿븮 ?댿뻽?댿뻽?묅뻽?댿븨   ?댿뻽?묅븱?댿뻽?쀢뻽?댿븫??     ?댿뻽?붴븧?먥뻽?댿븮?댿뻽?묅뻽?댿븫?먥븧?먥븧?앪뻽?댿븨  ?댿뻽?묅뻽?댿븫?먥븧?댿뻽?쀢뻽?댿븨?댿뻽?댿뻽?? ?댿뻽??
-    ?댿뻽??  ?댿뻽?댿뻽?댿븮  ?댿뻽?댿뻽?댿뻽?붴븴?댿뻽?붴뻽?댿뻽?댿븫?댿뻽?묅뻽?댿븨   ?댿뻽???싢뻽?댿뻽?붴븴 ?댿뻽?댿뻽?댿븮?댿뻽?댿뻽?댿뻽?댿븨?댿뻽?묅뻽?댿븨     ?댿뻽?댿뻽?댿뻽?댿븨?댿뻽?댿뻽?댿뻽?댿븨?댿뻽?묅뻽?댿븫?댿뻽???댿뻽??
-    ?댿뻽??  ?댿뻽?붴븧?먥븴  ?댿뻽?붴븧?먥뻽?댿븮?댿뻽?묅븱?댿뻽?붴븴?댿뻽?묅뻽?댿븨   ?댿뻽???댿뻽?붴뻽?댿븮 ?싢븧?먥븧?먥븴?댿뻽?붴븧?먥뻽?댿븨?댿뻽?묅뻽?댿븨     ?댿뻽?붴븧?먥뻽?댿븨?댿뻽?붴븧?먥뻽?댿븨?댿뻽?묅뻽?댿븨?싢뻽?댿븮?댿뻽??
-    ?댿뻽??  ?댿뻽?댿뻽?댿뻽?댿븮?댿뻽?? ?댿뻽?묅뻽?댿븨 ?싢븧???댿뻽?묅븱?댿뻽?댿뻽?댿뻽?붴븴?댿뻽?붴븴 ?댿뻽??     ?댿뻽?? ?댿뻽?묅뻽?댿븨?싢뻽?댿뻽?댿뻽?댿븮?댿뻽?? ?댿뻽?묅뻽?댿븨  ?댿뻽?묅뻽?댿븨?댿뻽???싢뻽?댿뻽?댿븨
-    ?싢븧??  ?싢븧?먥븧?먥븧?먥븴?싢븧?? ?싢븧?앪븱?먥븴     ?싢븧???싢븧?먥븧?먥븧???싢븧?? ?싢븧??     ?싢븧?? ?싢븧?앪븱?먥븴 ?싢븧?먥븧?먥븧?앪븱?먥븴  ?싢븧?앪븱?먥븴  ?싢븧?앪븱?먥븴?싢븧?? ?싢븧?먥븧??
+ _____                                     ___  _____ _____ _           _       
+|_   _|                                   / _ \|_   _/  __ \ |         (_)      
+  | | ___ _ __ _ __ ___  _   ___  __     / /_\ \ | | | /  \/ |__   __ _ _ _ __  
+  | |/ _ \ '__| '_ ` _ \| | | \ \/ / ___ |  _  | | | | |   | '_ \ / _` | | '_ \ 
+  | |  __/ |  | | | | | | |_| |>  < |___|| | | |_| |_| \__/\ | | | (_| | | | | |
+  \_/\___|_|  |_| |_| |_|\__,_/_/\_\     \_| |_/\___/ \____/_| |_|\__,_|_|_| |_|
 ```
 
 **Sovereign Zero-Dependency AI Chaining & Multimodal Autonomous Agent Framework for Android Termux**  
@@ -25,7 +25,7 @@
   <a href="https://uno-km.vercel.app/lib/aichain/"><img src="https://img.shields.io/badge/Official_Docs-uno--km.vercel.app%2Flib%2Faichain-004499?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Docs" /></a>
   <a href="https://github.com/uno-km/termux-aichain"><img src="https://img.shields.io/github/stars/uno-km/termux-aichain?style=for-the-badge&color=gold&logo=github" alt="GitHub Stars" /></a>
   <a href="https://github.com/uno-km/termux-aichain/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=for-the-badge" alt="License" /></a>
-  <a href="https://github.com/uno-km/termux-aichain"><img src="https://img.shields.io/badge/Tests-73%2F73%20PASS-success.svg?style=for-the-badge" alt="Tests" /></a>
+  <a href="https://github.com/uno-km/termux-aichain"><img src="https://img.shields.io/badge/Tests-153%2F153%20PASS-success.svg?style=for-the-badge" alt="Tests" /></a>
 </p>
 
 <p align="center">
@@ -38,25 +38,25 @@
 
 <br/>
 
-**[Official Documentation Site](https://uno-km.vercel.app/lib/aichain/)** 쨌 **[AMEVA Foundation](https://uno-km.vercel.app/foundation/)** 쨌 **[Installation](#1-quick-installation)** 쨌 **[Architecture](#2-why-termux-aichain-architectural-pillars)** 쨌 **[Recipes & Manual](#3-comprehensive-usage-recipes--manual)** 쨌 **[Parameters](#4-hardware-tuning--sampling-parameters)** 쨌 **[Benchmarks](#5-empirical-benchmarks-galaxy-s20)**
+**[Official Documentation Site](https://uno-km.vercel.app/lib/aichain/)** • **[AMEVA Foundation](https://uno-km.vercel.app/foundation/)** • **[Installation](#1-quick-installation)** • **[Architecture](#2-why-termux-aichain-architectural-pillars)** • **[Recipes & Manual](#3-comprehensive-usage-recipes--manual)** • **[Parameters](#4-hardware-tuning--sampling-parameters)** • **[Benchmarks](#5-empirical-benchmarks-galaxy-s20)**
 
 </div>
 
 ---
 
-## AMEVA Foundation ??Sovereign Mobile AI Ecosystem
+## AMEVA Foundation — Sovereign Mobile AI Ecosystem
 
 > **"$0 Cloud Cost, 0% External Data Egress. Turning every Android smartphone into a sovereign autonomous AI workstation."**  
 > The **AMEVA Open-Source Foundation (AOSF)** builds next-generation, client-centric AI runtimes spanning on-device large models, browser automation, neural network training, speech-to-text, and autonomous agent chaining.
 
 | Project | Platform & Packages | Core Capability & Technology | Documentation |
 | :--- | :--- | :--- | :---: |
-| ??**[termux-aichain](https://github.com/uno-km/termux-aichain)** | [![PyPI](https://img.shields.io/pypi/v/termux-aichain?color=blue&style=flat-square)](https://pypi.org/project/termux-aichain/) [![npm](https://img.shields.io/npm/v/termux-aichain?color=red&style=flat-square)](https://www.npmjs.com/package/termux-aichain) | **Zero-Dependency Multimodal Agent Chaining & StateGraph Engine** (Python stdlib + Node.js ESM) | **[Docs](https://uno-km.vercel.app/lib/aichain/)** |
-| ?럺截?**[termux-stt](https://github.com/uno-km/termux-stt)** | [![PyPI](https://img.shields.io/pypi/v/termux-stt?color=blue&style=flat-square)](https://pypi.org/project/termux-stt/) [![npm](https://img.shields.io/npm/v/termux-stt?color=red&style=flat-square)](https://www.npmjs.com/package/termux-stt) | **Integrated On-Device STT & Pure Python 128d X-Vector Diarization** (Whisper + Vosk + Sherpa) | **[Docs](https://uno-km.vercel.app/lib/stt/)** |
-| ?렓 **[termux-diffusion](https://github.com/uno-km/termux-diffusion)** | [![PyPI](https://img.shields.io/pypi/v/termux-diffusion?color=blue&style=flat-square)](https://pypi.org/project/termux-diffusion/) [![npm](https://img.shields.io/npm/v/termux-diffusion?color=red&style=flat-square)](https://www.npmjs.com/package/termux-diffusion) | **Mobile On-Device Stable Diffusion Image Generation** (bfloat16 ARM NEON acceleration) | **[Docs](https://uno-km.vercel.app/lib/diffusion/)** |
-| ?뙋 **[termux-playwright](https://github.com/uno-km/termux-playwright)** | [![PyPI](https://img.shields.io/pypi/v/termux-playwright?color=blue&style=flat-square)](https://pypi.org/project/termux-playwright/) [![npm](https://img.shields.io/npm/v/termux-playwright?color=red&style=flat-square)](https://www.npmjs.com/package/termux-playwright) | **Non-Root Native Headless Chromium Browser Automation & Scraping** | **[Docs](https://uno-km.vercel.app/lib/playwright/)** |
-| ?쭬 **[termux-train](https://github.com/uno-km/termux-train)** | [![PyPI](https://img.shields.io/pypi/v/termux-train.svg?color=blue&style=flat-square)](https://pypi.org/project/termux-train/) | **Mobile Native Autograd Neural Network Training & LoRA Fine-Tuning** | **[Docs](https://uno-km.vercel.app/lib/train/)** |
-| ??**[AMEVA-Forge](https://github.com/uno-km/ameva-forge)** | [![WebGPU](https://img.shields.io/badge/WebGPU-Autograd-purple?style=flat-square)](https://uno-km.vercel.app/lib/forge/) | **High-Performance WebGPU Autograd & 3D Neural Studio Engine** | **[Docs](https://uno-km.vercel.app/lib/forge/)** |
+| ⚡ **[termux-aichain](https://github.com/uno-km/termux-aichain)** | [![PyPI](https://img.shields.io/pypi/v/termux-aichain?color=blue&style=flat-square)](https://pypi.org/project/termux-aichain/) [![npm](https://img.shields.io/npm/v/termux-aichain?color=red&style=flat-square)](https://www.npmjs.com/package/termux-aichain) | **Zero-Dependency Multimodal Agent Chaining & StateGraph Engine** (Python stdlib + Node.js ESM) | **[Docs](https://uno-km.vercel.app/lib/aichain/)** |
+| 🎙️ **[termux-stt](https://github.com/uno-km/termux-stt)** | [![PyPI](https://img.shields.io/pypi/v/termux-stt?color=blue&style=flat-square)](https://pypi.org/project/termux-stt/) [![npm](https://img.shields.io/npm/v/termux-stt?color=red&style=flat-square)](https://www.npmjs.com/package/termux-stt) | **Integrated On-Device STT & Pure Python 128d X-Vector Diarization** (Whisper + Vosk + Sherpa) | **[Docs](https://uno-km.vercel.app/lib/stt/)** |
+| 🎨 **[termux-diffusion](https://github.com/uno-km/termux-diffusion)** | [![PyPI](https://img.shields.io/pypi/v/termux-diffusion?color=blue&style=flat-square)](https://pypi.org/project/termux-diffusion/) [![npm](https://img.shields.io/npm/v/termux-diffusion?color=red&style=flat-square)](https://www.npmjs.com/package/termux-diffusion) | **Mobile On-Device Stable Diffusion Image Generation** (bfloat16 ARM NEON acceleration) | **[Docs](https://uno-km.vercel.app/lib/diffusion/)** |
+| 🌐 **[termux-playwright](https://github.com/uno-km/termux-playwright)** | [![PyPI](https://img.shields.io/pypi/v/termux-playwright?color=blue&style=flat-square)](https://pypi.org/project/termux-playwright/) [![npm](https://img.shields.io/npm/v/termux-playwright?color=red&style=flat-square)](https://www.npmjs.com/package/termux-playwright) | **Non-Root Native Headless Chromium Browser Automation & Scraping** | **[Docs](https://uno-km.vercel.app/lib/playwright/)** |
+| 🧠 **[termux-train](https://github.com/uno-km/termux-train)** | [![PyPI](https://img.shields.io/pypi/v/termux-train.svg?color=blue&style=flat-square)](https://pypi.org/project/termux-train/) | **Mobile Native Autograd Neural Network Training & LoRA Fine-Tuning** | **[Docs](https://uno-km.vercel.app/lib/train/)** |
+| 🔮 **[AMEVA-Forge](https://github.com/uno-km/ameva-forge)** | [![WebGPU](https://img.shields.io/badge/WebGPU-Autograd-purple?style=flat-square)](https://uno-km.vercel.app/lib/forge/) | **High-Performance WebGPU Autograd & 3D Neural Studio Engine** | **[Docs](https://uno-km.vercel.app/lib/forge/)** |
 
 ---
 

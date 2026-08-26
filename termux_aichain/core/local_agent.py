@@ -178,7 +178,7 @@ class ServerIdentityVerifier:
 
         if not service_id:
             if status_field in {"ok", "loading model", "success"}:
-                service_id = "openai-compatible"  # Generic capability, NOT assumed to be llama-server
+                service_id = "openai-compatible"  # Generic capability baseline
             else:
                 raise ServerProtocolMismatchError(f"Incompatible or missing service status (status='{status_field}').")
 
@@ -186,10 +186,7 @@ class ServerIdentityVerifier:
         if service_id not in allowed_services:
             raise ServerProtocolMismatchError(f"Incompatible service identity '{service_id}'. Allowed: {sorted(allowed_services)}")
 
-        if expected_service and service_id != expected_service:
-            raise ServerProtocolMismatchError(f"Service mismatch: expected '{expected_service}', got '{service_id}'.")
-
-        # Resolve capability profile requirements
+        # Capability profile resolution
         profile = SERVER_PROFILES.get(expected_service) if expected_service else None
         effective_expected_protocol = expected_protocol_version or (profile.expected_protocol_version if profile and profile.require_protocol_version else None)
 
@@ -208,31 +205,81 @@ class ServerIdentityVerifier:
 
         actual_model_id = model_info.get("id")
         actual_sha256 = model_info.get("sha256")
+        discovered_model_ids: set[str] = set()
 
-        # If model identity is not in /health, try querying /v1/models (OpenAI standard)
-        if not actual_model_id and (expected_model_id or require_model_identity):
+        # P1-1 & P1-2 & P0-2: Mandatory /v1/models capability query for models & profiles
+        must_query_models = bool(profile and profile.require_model_endpoint)
+        should_query_models = must_query_models or (not actual_model_id and (expected_model_id or require_model_identity))
+
+        if should_query_models:
+            models_url = f"{endpoint_url.rstrip('/')}/v1/models"
+            req_m = urllib.request.Request(models_url, headers={"Accept": "application/json"})
             try:
-                models_url = f"{endpoint_url.rstrip('/')}/v1/models"
-                req_m = urllib.request.Request(models_url, headers={"Accept": "application/json"})
-                with opener.open(req_m, timeout=2.0) as resp_m:
-                    if resp_m.status == 200:
-                        m_data = json.loads(resp_m.read(max_health_bytes).decode("utf-8"))
-                        data_list = m_data.get("data", [])
-                        if data_list and isinstance(data_list[0], dict):
-                            actual_model_id = data_list[0].get("id")
-            except Exception:
-                pass
+                with opener.open(req_m, timeout=min(timeout_seconds, 5.0)) as resp_m:
+                    if resp_m.status != 200:
+                        if must_query_models:
+                            raise ServerProtocolMismatchError(f"Models endpoint returned non-200 HTTP status: {resp_m.status}.")
+                    else:
+                        raw_m = resp_m.read(max_health_bytes + 1)
+                        if len(raw_m) > max_health_bytes:
+                            raise ServerProtocolMismatchError("Models response exceeds maximum allowed size.")
+                        try:
+                            m_data = json.loads(raw_m.decode("utf-8"))
+                        except Exception as ex_j:
+                            raise ServerProtocolMismatchError("Models response is not valid JSON (Fail-Closed).") from ex_j
 
-        # P0-2: Strict fail-closed model identity check
+                        if not isinstance(m_data, dict):
+                            raise ServerProtocolMismatchError("Models response payload must be a JSON object.")
+
+                        data_list = m_data.get("data", [])
+                        if isinstance(data_list, list):
+                            discovered_model_ids = {
+                                item.get("id")
+                                for item in data_list
+                                if isinstance(item, dict) and isinstance(item.get("id"), str)
+                            }
+            except (ServerProtocolMismatchError, ServerConnectionRefusedError):
+                raise
+            except Exception as ex:
+                if must_query_models:
+                    raise ServerProtocolMismatchError(f"Mandatory models endpoint query failed for service '{expected_service}': {str(ex)}")
+
+        # P0-2: Service identity capability match
+        if expected_service:
+            if service_id == expected_service:
+                pass  # Direct assertion match
+            elif expected_service == "openai-compatible" and service_id in allowed_services:
+                pass  # Generic openai-compatible requirement is satisfied by any recognized backend
+            elif service_id == "openai-compatible" and expected_service in {"llama-server", "bitnet-server"}:
+                # Upstream server does not self-assert service name in /health, but provides capability
+                if must_query_models and not discovered_model_ids and not actual_model_id:
+                    raise ServerProtocolMismatchError(
+                        f"Server does not exhibit required '{expected_service}' capability (missing /v1/models enumeration)."
+                    )
+                service_id = expected_service
+            else:
+                raise ServerProtocolMismatchError(f"Service mismatch: expected '{expected_service}', got '{service_id}'.")
+
+        # P0-2 & P1-3: Strict fail-closed model identity check across all discovered model IDs
         if expected_model_id:
-            if not actual_model_id:
-                raise ModelIdentityMismatchError(
-                    "Expected model ID was configured, but the server did not provide model identity."
-                )
-            if actual_model_id != expected_model_id:
-                raise ModelIdentityMismatchError(
-                    f"Model ID mismatch: expected '{expected_model_id}', got '{actual_model_id}'."
-                )
+            if actual_model_id:
+                if actual_model_id != expected_model_id and expected_model_id not in discovered_model_ids:
+                    raise ModelIdentityMismatchError(
+                        f"Model ID mismatch: expected '{expected_model_id}', got '{actual_model_id}'."
+                    )
+                if actual_model_id != expected_model_id and expected_model_id in discovered_model_ids:
+                    actual_model_id = expected_model_id
+            else:
+                if expected_model_id in discovered_model_ids:
+                    actual_model_id = expected_model_id
+                elif discovered_model_ids:
+                    raise ModelIdentityMismatchError(
+                        f"Model ID mismatch: expected '{expected_model_id}', available: {sorted(discovered_model_ids)}."
+                    )
+                else:
+                    raise ModelIdentityMismatchError(
+                        "Expected model ID was configured, but the server did not provide model identity."
+                    )
 
         if expected_model_sha256:
             if not actual_sha256:
@@ -242,7 +289,7 @@ class ServerIdentityVerifier:
             if not hmac.compare_digest(actual_sha256.lower(), expected_model_sha256.lower()):
                 raise ModelIdentityMismatchError("Model checksum mismatch.")
 
-        if require_model_identity and not actual_model_id and not actual_sha256:
+        if require_model_identity and not actual_model_id and not actual_sha256 and not discovered_model_ids:
             raise ModelIdentityMismatchError("Server did not report model identity while require_model_identity is True.")
 
         payload["service"] = service_id
@@ -357,7 +404,9 @@ class LocalAgent:
         self._graph: CompiledGraph = create_react_agent(
             model=self.chat_model,
             tools=guarded_tools,
-            system_prompt=self.system_prompt
+            system_prompt=self.system_prompt,
+            tool_policy=self.tool_policy,
+            approval_callback=self.approval_callback
         )
 
         self._monitor_thread: Optional[threading.Thread] = None
@@ -420,7 +469,7 @@ class LocalAgent:
             ServerIdentityVerifier.verify(
                 endpoint_url=endpoint,
                 timeout_seconds=1.0,
-                expected_protocol_version="1.0",
+                expected_service="llama-server",
                 expected_model_id=expected_id
             )
             # Server is alive and verified -> Connect safely via standard validated pipeline
@@ -428,8 +477,8 @@ class LocalAgent:
                 mode="connect",
                 endpoint=endpoint,
                 connect=ConnectConfig(
-                    expected_model_id=expected_id,
-                    protocol_version="1.0"
+                    expected_service="llama-server",
+                    expected_model_id=expected_id
                 ),
                 tools=tools or [],
                 system_prompt=system_prompt
@@ -692,7 +741,8 @@ class LocalAgent:
                 endpoint_url=target_endpoint,
                 timeout_seconds=cfg.timeout_seconds,
                 max_health_bytes=cfg.max_health_bytes,
-                expected_protocol_version=cfg.protocol_version,
+                expected_service=cfg.expected_service,
+                expected_protocol_version=cfg.expected_protocol_version or cfg.protocol_version,
                 expected_model_id=cfg.expected_model_id,
                 expected_model_sha256=cfg.expected_model_sha256
             )

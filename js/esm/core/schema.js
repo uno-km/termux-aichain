@@ -43,12 +43,13 @@ export class ToolMessage {
     role = "tool";
     content;
     name;
-    tool_call_id;
     additional_kwargs;
     constructor(content, options) {
         this.content = content;
         this.name = options?.name;
-        this.tool_call_id = options?.tool_call_id;
-        this.additional_kwargs = options?.additional_kwargs;
+        this.additional_kwargs = {
+            ...(options?.additional_kwargs || {}),
+            ...(options?.tool_call_id ? { tool_call_id: options.tool_call_id } : {})
+        };
     }
 }

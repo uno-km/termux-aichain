@@ -124,10 +124,12 @@ class TransportSecurityConfig:
 @dataclass
 class ConnectConfig:
     """Explicit configuration for externally supervised servers."""
-    transport_policy: str = "loopback_only"
-    protocol_version: str = "1.0"
+    expected_service: str = "openai-compatible"
+    expected_protocol_version: Optional[str] = None
     expected_model_id: Optional[str] = None
     expected_model_sha256: Optional[str] = None
+    transport_policy: str = "loopback_only"
+    protocol_version: Optional[str] = None
     startup_process_allowed: bool = False
     timeout_seconds: float = 15.0
     max_health_bytes: int = 65536

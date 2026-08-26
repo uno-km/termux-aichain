@@ -5,7 +5,6 @@
  */
 import { SystemMessage, ToolMessage } from "../core/schema.js";
 import { StateGraph, END } from "./state.js";
-
 export function tool(config, fn) {
     return {
         name: config.name,
@@ -14,33 +13,30 @@ export function tool(config, fn) {
         parameters: config.parameters
     };
 }
-
 export function validateToolArguments(schema, args) {
-    if (!schema || !args || typeof args !== "object") return;
+    if (!schema || !args || typeof args !== "object")
+        return;
     const properties = schema.properties || {};
     const required = schema.required || [];
-
     // 1. Required fields check
     for (const reqField of required) {
         if (!(reqField in args)) {
             throw new Error(`ToolArgumentValidationError: Missing required argument '${reqField}'.`);
         }
     }
-
-    // 2. Additional properties check (Reject unknown arguments unless explicitly allowed)
+    // 2. Additional properties check
     if (schema.additionalProperties !== true) {
         const unknown = Object.keys(args).filter(k => !(k in properties));
         if (unknown.length > 0) {
             throw new Error(`ToolArgumentValidationError: Unknown argument(s): ${unknown.join(", ")}.`);
         }
     }
-
     // 3. Property types, bounds, and enum checks
     for (const [key, val] of Object.entries(args)) {
-        if (!(key in properties)) continue;
+        if (!(key in properties))
+            continue;
         const fieldSchema = properties[key];
         const type = fieldSchema.type;
-
         if (type === "integer") {
             if (typeof val !== "number" || !Number.isInteger(val)) {
                 throw new Error(`ToolArgumentValidationError: Argument '${key}' must be an integer.`);
@@ -51,7 +47,8 @@ export function validateToolArguments(schema, args) {
             if (fieldSchema.maximum !== undefined && val > fieldSchema.maximum) {
                 throw new Error(`ToolArgumentValidationError: Argument '${key}' must be <= ${fieldSchema.maximum}.`);
             }
-        } else if (type === "number") {
+        }
+        else if (type === "number") {
             if (typeof val !== "number") {
                 throw new Error(`ToolArgumentValidationError: Argument '${key}' must be a number.`);
             }
@@ -61,11 +58,13 @@ export function validateToolArguments(schema, args) {
             if (fieldSchema.maximum !== undefined && val > fieldSchema.maximum) {
                 throw new Error(`ToolArgumentValidationError: Argument '${key}' must be <= ${fieldSchema.maximum}.`);
             }
-        } else if (type === "boolean") {
+        }
+        else if (type === "boolean") {
             if (typeof val !== "boolean") {
                 throw new Error(`ToolArgumentValidationError: Argument '${key}' must be a boolean.`);
             }
-        } else if (type === "string") {
+        }
+        else if (type === "string") {
             if (typeof val !== "string") {
                 throw new Error(`ToolArgumentValidationError: Argument '${key}' must be a string.`);
             }
@@ -75,16 +74,17 @@ export function validateToolArguments(schema, args) {
             if (fieldSchema.maxLength !== undefined && val.length > fieldSchema.maxLength) {
                 throw new Error(`ToolArgumentValidationError: Argument '${key}' length must be <= ${fieldSchema.maxLength}.`);
             }
-        } else if (type === "array") {
+        }
+        else if (type === "array") {
             if (!Array.isArray(val)) {
                 throw new Error(`ToolArgumentValidationError: Argument '${key}' must be an array.`);
             }
-        } else if (type === "object") {
+        }
+        else if (type === "object") {
             if (typeof val !== "object" || val === null || Array.isArray(val)) {
                 throw new Error(`ToolArgumentValidationError: Argument '${key}' must be an object.`);
             }
         }
-
         // Global Enum Check
         if (fieldSchema.enum && Array.isArray(fieldSchema.enum)) {
             if (!fieldSchema.enum.includes(val)) {
@@ -93,19 +93,16 @@ export function validateToolArguments(schema, args) {
         }
     }
 }
-
 export function createReactAgent(model, tools, options = {}) {
-    const systemPrompt = typeof options === "string" ? options : options.systemPrompt;
-    // Strict Fail-Closed Default Deny Tool Policy (allowedTools: [])
-    const toolPolicy = (typeof options === "object" && options.toolPolicy) ? options.toolPolicy : {
+    const resolvedOptions = typeof options === "string" ? { systemPrompt: options } : options;
+    const systemPrompt = resolvedOptions.systemPrompt;
+    const toolPolicy = resolvedOptions.toolPolicy ?? {
         default: "deny",
         allowedTools: []
     };
-    const approvalCallback = typeof options === "object" ? options.approvalCallback : undefined;
-
+    const approvalCallback = resolvedOptions.approvalCallback;
     const toolsByName = new Map();
     tools.forEach(t => toolsByName.set(t.name, t));
-
     const agentNode = async (state) => {
         let msgs = [...state.messages];
         if (systemPrompt && !msgs.some(m => m.role === "system")) {
@@ -117,64 +114,57 @@ export function createReactAgent(model, tools, options = {}) {
             lastAiMessage: gen.message
         };
     };
-
     const shouldContinue = (state) => {
         if (!state.lastAiMessage || !state.lastAiMessage.tool_calls || state.lastAiMessage.tool_calls.length === 0) {
             return END;
         }
         return "tools_node";
     };
-
     const toolsNode = async (state) => {
         const msgs = [...state.messages];
         const toolCalls = state.lastAiMessage?.tool_calls ?? [];
         const newMsgs = [];
-
         for (const call of toolCalls) {
             const callId = call.id ?? "call_id";
             const fnName = call.function?.name;
             let args = call.function?.arguments;
-
             if (typeof args === "string") {
                 try {
                     args = JSON.parse(args);
-                } catch {
+                }
+                catch {
                     args = {};
                 }
             }
-
             let content = "";
-            const t = toolsByName.get(fnName);
-
-            if (t) {
+            const t = fnName ? toolsByName.get(fnName) : undefined;
+            if (t && fnName) {
                 try {
                     // 1. Tool Policy Check (Default Deny)
                     if (toolPolicy.default === "deny" && !toolPolicy.allowedTools?.includes(fnName)) {
                         throw new Error(`ToolPolicyDeniedError: Tool '${fnName}' is denied by security policy (default=deny).`);
                     }
-
                     // 2. Strict JSON Schema Validation
-                    if (t.parameters) {
+                    if (t.parameters && args && typeof args === "object") {
                         validateToolArguments(t.parameters, args);
                     }
-
                     // 3. User Approval Callback
                     if (approvalCallback) {
-                        const approved = await approvalCallback(fnName, args);
+                        const approved = await approvalCallback(fnName, args && typeof args === "object" ? args : {});
                         if (!approved) {
                             throw new Error(`ToolApprovalRequiredError: Invocation of '${fnName}' rejected by user approval.`);
                         }
                     }
-
                     const res = await t.func(args);
                     content = String(res);
-                } catch (e) {
+                }
+                catch (e) {
                     content = `Error in tool ${fnName}: ${e.message}`;
                 }
-            } else {
+            }
+            else {
                 content = `Tool '${fnName}' not found.`;
             }
-
             newMsgs.push(new ToolMessage(content, {
                 name: fnName,
                 tool_call_id: callId,
@@ -183,7 +173,6 @@ export function createReactAgent(model, tools, options = {}) {
         }
         return { messages: [...msgs, ...newMsgs] };
     };
-
     const workflow = new StateGraph();
     workflow.addNode("agent_node", agentNode);
     workflow.addNode("tools_node", toolsNode);

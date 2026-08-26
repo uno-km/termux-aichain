@@ -12,6 +12,7 @@ export * from "./core/providers/openai_compatible.js";
 export * from "./core/providers/bitnet.js";
 export * from "./core/parsers.js";
 export * from "./core/splitters.js";
+export * from "./core/local_agent.js";
 export * from "./graph/state.js";
 export * from "./graph/agent.js";
 export * from "./memory/buffer.js";

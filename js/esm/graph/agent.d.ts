@@ -22,4 +22,20 @@ export interface AgentState {
     lastAiMessage?: AIMessage;
     [key: string]: any;
 }
-export declare function createReactAgent(model: BaseChatModel, tools: Tool[], systemPrompt?: string): CompiledGraph<AgentState>;
+export interface ToolRule {
+    approval?: "none" | "explicit_prompt" | "token_verified";
+    maxCallsPerMinute?: number;
+    allowedRanges?: Record<string, [number, number]>;
+}
+export interface ToolPolicy {
+    default: "allow" | "deny";
+    allowedTools?: string[];
+    rules?: Record<string, ToolRule>;
+}
+export interface CreateReactAgentOptions {
+    systemPrompt?: string;
+    toolPolicy?: ToolPolicy;
+    approvalCallback?: (toolName: string, args: Record<string, any>) => boolean | Promise<boolean>;
+}
+export declare function validateToolArguments(schema: Record<string, any>, args: Record<string, any>): void;
+export declare function createReactAgent(model: BaseChatModel, tools: Tool[], options?: CreateReactAgentOptions | string): CompiledGraph<AgentState>;

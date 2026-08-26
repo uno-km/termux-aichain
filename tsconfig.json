@@ -1,10 +1,10 @@
-﻿{
+{
   "compilerOptions": {
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "declaration": true,
-    "outDir": "./dist",
+    "outDir": "./js/esm",
     "rootDir": "./js/src",
     "strict": true,
     "esModuleInterop": true,

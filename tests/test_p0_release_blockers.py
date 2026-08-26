@@ -390,10 +390,10 @@ def test_unknown_server_status_ok_is_openai_compatible_not_llama(monkeypatch):
     payload = ServerIdentityVerifier.verify("http://127.0.0.1:8080")
     assert payload["service"] == "openai-compatible"
 
-    # expected_service="llama-server" 지정 시 불일치로 거부
+    # expected_service="llama-server" 지정 시 /v1/models 에 유효 모델 목록이 없으면 거부
     with pytest.raises(ServerProtocolMismatchError) as exc:
         ServerIdentityVerifier.verify("http://127.0.0.1:8080", expected_service="llama-server")
-    assert "Service mismatch" in str(exc.value)
+    assert any(k in str(exc.value) for k in ["capability", "Service mismatch", "Mandatory"])
 
 # 29. expected_model_id 지정 + 서버 model ID 누락 시 fail-closed (P0-2)
 def test_expected_model_id_missing_fails_closed(monkeypatch):
@@ -576,3 +576,110 @@ def test_cmd_run_rejects_non_gguf_user_file(tmp_path, capsys):
     cmd_run(str(bad_file))
     out = capsys.readouterr().out
     assert "not a valid GGUF binary format" in out
+
+# 40. Upstream llama-server without self-asserting service in /health succeeds via capability
+def test_upstream_llama_server_verified_by_capability(monkeypatch):
+    class FakeHealth:
+        status = 200
+        def read(self, limit): return b'{"status": "ok"}'
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+
+    class FakeModels:
+        status = 200
+        def read(self, limit): return b'{"data": [{"id": "qwen2.5-1.5b.gguf"}]}'
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+
+    def fake_open(self, req, timeout=None):
+        if "health" in req.full_url:
+            return FakeHealth()
+        elif "models" in req.full_url:
+            return FakeModels()
+        raise OSError("404")
+
+    monkeypatch.setattr("urllib.request.OpenerDirector.open", fake_open)
+    payload = ServerIdentityVerifier.verify(
+        "http://127.0.0.1:8080",
+        expected_service="llama-server",
+        expected_model_id="qwen2.5-1.5b.gguf"
+    )
+    assert payload["service"] == "llama-server"
+    assert payload["model"]["id"] == "qwen2.5-1.5b.gguf"
+
+# 41. Multi-model /v1/models response matches expected_model_id correctly
+def test_v1_models_multi_model_matching(monkeypatch):
+    class FakeHealth:
+        status = 200
+        def read(self, limit): return b'{"status": "ok"}'
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+
+    class FakeModels:
+        status = 200
+        def read(self, limit): return b'{"data": [{"id": "llama-3.2-3b.gguf"}, {"id": "target-model.gguf"}, {"id": "bitnet.gguf"}]}'
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+
+    def fake_open(self, req, timeout=None):
+        if "health" in req.full_url:
+            return FakeHealth()
+        elif "models" in req.full_url:
+            return FakeModels()
+        raise OSError("404")
+
+    monkeypatch.setattr("urllib.request.OpenerDirector.open", fake_open)
+    payload = ServerIdentityVerifier.verify(
+        "http://127.0.0.1:8080",
+        expected_service="llama-server",
+        expected_model_id="target-model.gguf"
+    )
+    assert payload["model"]["id"] == "target-model.gguf"
+
+# 42. Oversized /v1/models payload rejected (fail-closed)
+def test_v1_models_oversized_payload_rejected(monkeypatch):
+    class FakeHealth:
+        status = 200
+        def read(self, limit): return b'{"status": "ok"}'
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+
+    class FakeOversizedModels:
+        status = 200
+        def read(self, limit): return b'{"data": []}' + (b"X" * (limit + 50))
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+
+    def fake_open(self, req, timeout=None):
+        if "health" in req.full_url:
+            return FakeHealth()
+        elif "models" in req.full_url:
+            return FakeOversizedModels()
+        raise OSError("404")
+
+    monkeypatch.setattr("urllib.request.OpenerDirector.open", fake_open)
+    with pytest.raises(ServerProtocolMismatchError, match="exceeds maximum allowed size"):
+        ServerIdentityVerifier.verify(
+            "http://127.0.0.1:8080",
+            expected_service="llama-server",
+            max_health_bytes=100
+        )
+
+# 43. Python create_react_agent tool policy default deny
+def test_create_react_agent_tool_policy_default_deny():
+    model = SequenceModel([
+        'Action: termux_vibrate\nAction Input: {"duration_ms": 500}',
+        'Done'
+    ])
+    # Explicitly deny termux_vibrate via policy
+    denied_policy = ToolPolicy(default="deny", allowed_tools={})
+    agent = create_react_agent(
+        model=model,
+        tools=[vibrate_device],
+        parser_policy=OutputParserPolicy(allow_react_text_tool_calls=True),
+        tool_policy=denied_policy
+    )
+    res = agent.invoke({"messages": [HumanMessage(content="vibrate")]})
+    tool_msgs = [m for m in res["messages"] if m.__class__.__name__ == "ToolMessage"]
+    assert len(tool_msgs) > 0
+    assert "ToolPolicyDeniedError" in tool_msgs[0].content or "denied by security policy" in tool_msgs[0].content

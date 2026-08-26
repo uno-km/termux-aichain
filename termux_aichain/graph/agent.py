@@ -20,6 +20,11 @@ from termux_aichain.core.agent_types import (
     DuplicateToolAliasError,
     ToolArgumentValidationError,
     ToolCallRepairNotAllowedError,
+    ToolPolicy,
+    ToolRule,
+    ToolPolicyDeniedError,
+    ToolRateLimitExceededError,
+    ToolApprovalRequiredError,
 )
 from termux_aichain.graph.state import StateGraph, START, END, CompiledGraph
 from termux_aichain.output.normalizer import OutputNormalizer, RawModelResponse, ToolCall, OutputParserPolicy, validate_tool_arguments
@@ -78,9 +83,11 @@ def create_react_agent(
     model: Union[BaseChatModel, Callable[..., Any], Any],
     tools: Sequence[Union[Tool, Callable[..., Any]]],
     system_prompt: Optional[str] = None,
-    parser_policy: Optional[OutputParserPolicy] = None
+    parser_policy: Optional[OutputParserPolicy] = None,
+    tool_policy: Optional[ToolPolicy] = None,
+    approval_callback: Optional[Callable[[str, Dict[str, Any]], bool]] = None
 ) -> CompiledGraph:
-    """Compiles a cyclic ReAct Agent using StateGraph with strict alias collision checks and normalization."""
+    """Compiles a cyclic ReAct Agent using StateGraph with strict alias collision checks, authorization policies, and normalization."""
     normalized_tools: List[Tool] = []
     for t in tools:
         if isinstance(t, Tool):
@@ -103,6 +110,10 @@ def create_react_agent(
             tools_by_name[alias] = t
 
     effective_policy = parser_policy or OutputParserPolicy()
+    effective_tool_policy = tool_policy or ToolPolicy(
+        default="deny",
+        allowed_tools={t.name: ToolRule() for t in normalized_tools}
+    )
 
     if system_prompt:
         effective_system_prompt = system_prompt
@@ -201,11 +212,37 @@ def create_react_agent(
                 try:
                     target_tool = tools_by_name[fn_name]
 
-                    # P0-3: Strict Tool JSON Schema Validation before binding
+                    # 1. Tool Policy Check (Default Deny)
+                    if effective_tool_policy.default == "deny" and fn_name not in effective_tool_policy.allowed_tools:
+                        raise ToolPolicyDeniedError(f"Tool '{fn_name}' is denied by security policy (default=deny).")
+
+                    rule_raw = effective_tool_policy.allowed_tools.get(fn_name, ToolRule())
+                    rule = rule_raw if isinstance(rule_raw, ToolRule) else ToolRule(**rule_raw)
+
+                    # 2. Strict Tool JSON Schema Validation before binding
                     if isinstance(fn_args, dict) and target_tool.parameters:
                         validate_tool_arguments(target_tool.parameters, fn_args)
 
-                    # P0-4: Strict Signature Binding (bind() instead of bind_partial())
+                    # 3. Allowed ranges check
+                    if isinstance(fn_args, dict):
+                        for param_name, val in fn_args.items():
+                            if param_name in rule.allowed_ranges:
+                                min_val, max_val = rule.allowed_ranges[param_name]
+                                if isinstance(val, bool):
+                                    raise ToolArgumentValidationError(f"Argument '{param_name}' must be an integer, bool is rejected.")
+                                if not isinstance(val, (int, float)) or not (min_val <= val <= max_val):
+                                    raise ToolArgumentValidationError(
+                                        f"Argument '{param_name}' value {val} violates allowed range [{min_val}, {max_val}]."
+                                    )
+
+                    # 4. User Approval Callback
+                    if rule.approval in ("explicit_prompt", "token_verified"):
+                        if not approval_callback:
+                            raise ToolApprovalRequiredError(f"Tool '{fn_name}' requires approval but no callback was registered.")
+                        if not approval_callback(fn_name, fn_args if isinstance(fn_args, dict) else {}):
+                            raise ToolApprovalRequiredError(f"Invocation of tool '{fn_name}' was rejected by user approval.")
+
+                    # 5. Strict Signature Binding (bind() instead of bind_partial())
                     sig = inspect.signature(target_tool.func)
                     if isinstance(fn_args, dict):
                         bound = sig.bind(**fn_args)

@@ -280,8 +280,7 @@ def cmd_status(verbose: bool = False) -> None:
     try:
         data = ServerIdentityVerifier.verify(
             endpoint_url=endpoint,
-            timeout_seconds=2.0,
-            expected_protocol_version="1.0"
+            timeout_seconds=2.0
         )
         print("Status:   ready")
         print(f"Service:  {data.get('service', 'termux-aichain')}")

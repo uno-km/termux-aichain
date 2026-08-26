@@ -44,6 +44,17 @@ export declare class AIMessage implements Message {
         additional_kwargs?: Record<string, any>;
     });
 }
+export declare class ToolMessage implements Message {
+    role: RoleType;
+    content: string;
+    name?: string;
+    additional_kwargs?: Record<string, any>;
+    constructor(content: string, options?: {
+        name?: string;
+        tool_call_id?: string;
+        additional_kwargs?: Record<string, any>;
+    });
+}
 export interface UsageInfo {
     prompt_tokens: number;
     completion_tokens: number;

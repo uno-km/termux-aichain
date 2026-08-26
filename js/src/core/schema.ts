@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ==============================================================================
  * @termux-ai/chain Core Schema (TypeScript ESM)
  * ==============================================================================
@@ -53,6 +53,22 @@ export class AIMessage implements Message {
     this.name = options?.name;
     this.tool_calls = options?.tool_calls;
     this.additional_kwargs = options?.additional_kwargs;
+  }
+}
+
+export class ToolMessage implements Message {
+  role: RoleType = "tool";
+  content: string;
+  name?: string;
+  additional_kwargs?: Record<string, any>;
+
+  constructor(content: string, options?: { name?: string; tool_call_id?: string; additional_kwargs?: Record<string, any> }) {
+    this.content = content;
+    this.name = options?.name;
+    this.additional_kwargs = {
+      ...(options?.additional_kwargs || {}),
+      ...(options?.tool_call_id ? { tool_call_id: options.tool_call_id } : {})
+    };
   }
 }
 
