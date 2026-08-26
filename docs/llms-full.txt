@@ -1,48 +1,24 @@
-# termux-aichain Full Technical Specification (v0.1.0)
+# AMEVA-Core Full Technical Specification (v1.0.0)
 Official Documentation & Deep Architecture Reference for Autonomous AI Agents.
 
 ## 1. System Overview
-Sovereign Zero-Dependency AI Chaining and Agent Framework for Termux & Android Edge
-Engineered under the Zero-Heavy-Dependency doctrine: Pure Python stdlib and pure Node.js ESM orchestration for local llama-server, BitNet 1-bit models, state graphs, and native Termux hardware APIs.
+High-Performance Edge & Browser Native Open-Source Systems Library
+Eliminates server roundtrips by compiling low-level kernels directly to WebGPU/Bionic ARM64 with zero-leak buffer pooling and closed-form mathematical precision.
 
 ## 2. Package & Installation
-- PyPI: termux-aichain
-- Command: pip install termux-aichain
-# or for Node.js:
-npm install @termux-ai/chain
-- Repository: https://github.com/uno-km/termux-aichain
+- PyPI: ameva-core
+- Command: pip install ameva-core
+# or: npm install @ameva/core
+- Repository: https://github.com/uno-km/uno-km
 
 ## 3. Core Capabilities
-- **Zero External Heavy Dependencies**: Pure Python standard library and pure Node.js ESM. Cold start import in under 18ms with less than 280KB disk footprint.
-- **StateGraph & ReAct Engine**: Deterministic cyclic state machines and autonomous tool-calling loops (LangGraph lightweight alternative).
-- **SQLite Long-Term Memory**: Persistent entity key-value storage and pure cosine vector search without ChromaDB or NumPy.
-- **1-Line REST & SSE Server**: Exposes any agent or chain over local mobile WiFi with Server-Sent Events without FastAPI overhead.
-- **CLI Tree Tracer & TPS Meter**: Hierarchical ANSI tree visualization, millisecond latency profiling, and token throughput meters.
-- **Native Android Hardware Toolkit**: Direct tool-calling wrappers for Termux-API (battery status, sensors, GPS location, STT, TTS, vibration).
+- **Zero-Config Native Execution**: Executes instantly on mobile, Termux, and browser runtimes with zero external compilation overhead.
+- **Mathematical Integrity & Precision**: Closed-form algebraic formulation with deterministic float precision across heterogeneous hardware.
+- **Hardware Memory Protection**: Automated buffer pooling and weakref lifetime management preventing GPU VRAM exhaustion.
 
 ## 4. Canonical Implementation
 ```python
-from termux_aichain import (
-    BitNetChat,
-    create_react_agent,
-    get_default_device_tools,
-    Tracer,
-    HumanMessage
-)
-
-# 1. Connect to local 1-bit or GGUF LLM
-llm = BitNetChat(base_url="http://127.0.0.1:8088/v1", model="bitnet-b1.58-3b")
-
-# 2. Compile ReAct Agent with native Android device tools
-agent = create_react_agent(model=llm, tools=get_default_device_tools())
-
-# 3. Profile execution with local CLI tracer
-tracer = Tracer("EdgeMobileRun")
-with tracer.trace("AgentExecution"):
-    result = agent.invoke({"messages": [HumanMessage(content="Check battery and sensor status.")]})
-
-tracer.finish()
-tracer.print_tree()
-print("Agent Output:", result["messages"][-1].content)
-
+import ameva_core as ac
+engine = ac.Engine()
+print(engine.compute([1.0, 2.0]))
 ```

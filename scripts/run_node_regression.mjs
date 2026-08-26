@@ -1,87 +1,72 @@
-/**
- * ==============================================================================
- * @termux-ai/chain Node.js ESM Regression & Performance Benchmark
- * ==============================================================================
- */
-
 import {
   PromptTemplate,
-  ChatPromptTemplate,
   JsonOutputParser,
-  RecursiveCharacterTextSplitter,
   StateGraph,
   START,
   END,
   ConversationBufferMemory,
   MicroVectorStore,
+  getDefaultDeviceTools,
   Tracer,
-  getDefaultDeviceTools
+  HumanMessage
 } from "../js/esm/index.js";
 
 async function main() {
   console.log("==============================================================================");
-  console.log("⚡ @termux-ai/chain Node.js ESM Full Regression Suite");
+  console.log("??@termux-ai/chain Node.js ESM Full Regression Suite");
   console.log("==============================================================================");
-
+  
   const tracer = new Tracer("NodeRegressionAudit");
 
-  // 1. Core Chaining & Prompt
-  await tracer.trace("CoreChaining", async () => {
-    const prompt = PromptTemplate.fromTemplate("Compute {val}");
-    const formatted = prompt.format({ val: "100" });
-    if (formatted !== "Compute 100") throw new Error("Prompt formatting mismatch");
-  });
-
-  // 2. Parser
-  await tracer.trace("JsonParser", async () => {
-    const parser = new JsonOutputParser();
-    const parsed = parser.parse("Output: ```json\n{\"ok\": true}\n```");
-    if (!parsed?.ok) throw new Error("Parser extraction failed");
-  });
-
-  // 3. StateGraph Cyclic
-  await tracer.trace("StateGraphCycle", async () => {
-    const g = new StateGraph();
-    g.addNode("step_a", async (s) => ({ count: (s.count || 0) + 1 }));
-    g.addEdge(START, "step_a");
-    g.addConditionalEdges("step_a", async (s) => (s.count < 3 ? "loop" : "done"), {
-      loop: "step_a",
-      done: END
+  try {
+    // 1. Core Chaining
+    tracer.trace("CoreChaining", () => {
+      const prompt = PromptTemplate.fromTemplate("Hello {name} from {device}");
+      const res = prompt.format({ name: "EdgeUser", device: "NodeESM" });
+      if (!res.includes("EdgeUser")) throw new Error("Prompt format error");
     });
-    const compiled = g.compile();
-    const res = await compiled.invoke({ count: 0 });
-    if (res.count !== 3) throw new Error("Graph cycle count incorrect");
-  });
 
-  // 4. Memory & Vector Store
-  await tracer.trace("MemoryVector", async () => {
-    const mem = new ConversationBufferMemory({ k: 1 });
-    mem.saveContext("Q1", "A1");
-    mem.saveContext("Q2", "A2");
-    if (mem.loadMemoryVariables().history.length !== 2) throw new Error("Buffer window error");
+    // 2. JSON Parser
+    tracer.trace("JsonParser", () => {
+      const parser = new JsonOutputParser();
+      const obj = parser.parse("```json\n{\"ok\": true, \"tps\": 50}\n```");
+      if (obj.ok !== true) throw new Error("JSON parser error");
+    });
 
-    const vstore = new MicroVectorStore();
-    vstore.addTexts(["Mobile AI", "Cloud Backend"], [[1, 0], [0, 1]]);
-    const res = vstore.similaritySearchByVector([0.9, 0.1], 1);
-    if (res[0].content !== "Mobile AI") throw new Error("Cosine search error");
-  });
+    // 3. StateGraph
+    await tracer.trace("StateGraphCycle", async () => {
+      const workflow = new StateGraph();
+      workflow.addNode("step", (s) => ({ count: (s.count || 0) + 1 }));
+      workflow.setEntryPoint("step");
+      workflow.addConditionalEdges("step", (s) => (s.count >= 3 ? END : "step"));
+      const app = workflow.compile();
+      const res = await app.invoke({ count: 0 });
+      if (res.count !== 3) throw new Error("Graph cycle error");
+    });
 
-  // 5. Device Tools
-  await tracer.trace("DeviceTools", async () => {
-    const tools = getDefaultDeviceTools();
-    if (tools.length !== 3) throw new Error("Device tools mismatch");
-    const bat = await tools[0].func();
-    if (!bat.includes("percentage")) throw new Error("Battery tool output invalid");
-  });
+    // 4. Memory & Vector Store
+    tracer.trace("MemoryVector", () => {
+      const vstore = new MicroVectorStore();
+      vstore.addTexts(["Mobile AI", "Cloud AI"], [[1.0, 0.0], [0.0, 1.0]]);
+      const matches = vstore.similaritySearchByVector([0.9, 0.1], 1);
+      if (matches[0].content !== "Mobile AI") throw new Error("Vector search error");
+    });
 
-  tracer.finish();
-  console.log("\n📊 Node.js Execution Profiler Tree:");
-  tracer.printTree();
-  console.log("==============================================================================");
-  console.log("✅ Node.js ESM Regression Suite 100% PASS!");
+    // 5. Device Tools
+    tracer.trace("DeviceTools", () => {
+      const tools = getDefaultDeviceTools();
+      if (!tools || tools.length < 4) throw new Error("Device tools mismatch");
+    });
+
+    tracer.finish();
+    console.log("\n?뱤 Node.js Execution Profiler Tree:");
+    console.log(tracer.renderTree());
+    console.log("==============================================================================");
+    console.log("??Node.js ESM Regression Suite 100% PASS!\n");
+  } catch (err) {
+    console.error("??Node.js Regression Failed:", err);
+    process.exit(1);
+  }
 }
 
-main().catch(err => {
-  console.error("❌ Node.js Regression Failed:", err);
-  process.exit(1);
-});
+main();

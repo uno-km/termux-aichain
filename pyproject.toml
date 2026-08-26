@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "termux-aichain"
-version = "0.1.0"
+version = "1.0.0"
 description = "Ultra-lightweight Zero-Dependency AI chaining & agent framework for Termux, Android and Edge computing."
 readme = "README.md"
 authors = [{ name = "UnoKim", email = "uno-km@users.noreply.github.com" }]
@@ -39,3 +39,5 @@ include = ["termux_aichain*"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+[project.scripts]
+termux-aichain = "termux_aichain.cli:main"

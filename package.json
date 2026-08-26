@@ -1,6 +1,6 @@
 {
   "name": "@termux-ai/chain",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Ultra-lightweight Zero-Dependency AI chaining & agent framework for Termux, Android and Edge computing.",
   "type": "module",
   "main": "js/esm/index.js",

@@ -1,177 +1,143 @@
 {
-  "timestamp": "2026-08-26 09:59:07",
   "total_score": 100.0,
-  "max_score": 100.0,
+  "percentage": 100.0,
   "grade": "A+ (PERFECT ZERO-DEFECT)",
-  "category_scores": {
-    "1. Installation & Zero-Dep": 15.0,
-    "2. Core Engine & Chaining": 20.0,
-    "3. Graph & State Machine": 20.0,
-    "4. Memory & Vector Store": 15.0,
-    "5. Serve & Trace Engine": 15.0,
-    "6. Device Hardware & Local LLM": 15.0
-  },
-  "test_results": [
+  "duration_sec": 0.7679247856140137,
+  "items": [
     {
-      "timestamp": "2026-08-26 09:59:07",
       "category": "1. Installation & Zero-Dep",
-      "test_name": "Core Module Zero-Dep Imports",
-      "points": 5.0,
-      "max_pts": 5.0,
-      "latency_ms": 66.43,
-      "status": "PASS",
-      "detail": "Imported in 66.43ms"
+      "name": "Zero-Dep Standard Imports & Version 1.0.0",
+      "allocated": 5.0,
+      "awarded": 5.0,
+      "duration_ms": 127.75259999762056,
+      "passed": true,
+      "error": null
     },
     {
-      "timestamp": "2026-08-26 09:59:07",
       "category": "1. Installation & Zero-Dep",
-      "test_name": "Disk Footprint Audit",
-      "points": 5.0,
-      "max_pts": 5.0,
-      "latency_ms": 2.71,
-      "status": "PASS",
-      "detail": "Total package size: 212.1 KB"
+      "name": "Micro Disk Footprint (< 500KB)",
+      "allocated": 5.0,
+      "awarded": 5.0,
+      "duration_ms": 3.014899994013831,
+      "passed": true,
+      "error": null
     },
     {
-      "timestamp": "2026-08-26 09:59:07",
       "category": "1. Installation & Zero-Dep",
-      "test_name": "Schema Serialization Integrity",
-      "points": 5.0,
-      "max_pts": 5.0,
-      "latency_ms": 0.02,
-      "status": "PASS",
-      "detail": "Message schema verified"
+      "name": "Schema Serialization Integrity",
+      "allocated": 5.0,
+      "awarded": 5.0,
+      "duration_ms": 0.015199999324977398,
+      "passed": true,
+      "error": null
     },
     {
-      "timestamp": "2026-08-26 09:59:07",
       "category": "2. Core Engine & Chaining",
-      "test_name": "PromptTemplate Partial & Format",
-      "points": 5.0,
-      "max_pts": 5.0,
-      "latency_ms": 0.02,
-      "status": "PASS",
-      "detail": "Prompt template functional"
+      "name": "Pipe Composition (|) & Json Parser",
+      "allocated": 5.0,
+      "awarded": 5.0,
+      "duration_ms": 0.07370000093942508,
+      "passed": true,
+      "error": null
     },
     {
-      "timestamp": "2026-08-26 09:59:07",
       "category": "2. Core Engine & Chaining",
-      "test_name": "Pipe Operator Composition",
-      "points": 5.0,
-      "max_pts": 5.0,
-      "latency_ms": 0.05,
-      "status": "PASS",
-      "detail": "Sequential chaining validated"
+      "name": "Recursive Text Splitter Hierarchy",
+      "allocated": 5.0,
+      "awarded": 5.0,
+      "duration_ms": 0.08420000085607171,
+      "passed": true,
+      "error": null
     },
     {
-      "timestamp": "2026-08-26 09:59:07",
       "category": "2. Core Engine & Chaining",
-      "test_name": "JsonOutputParser Markdown & Fallback",
-      "points": 5.0,
-      "max_pts": 5.0,
-      "latency_ms": 0.05,
-      "status": "PASS",
-      "detail": "Resilient JSON extraction"
+      "name": "PromptTemplate Literal Escaping",
+      "allocated": 5.0,
+      "awarded": 5.0,
+      "duration_ms": 0.01080000220099464,
+      "passed": true,
+      "error": null
     },
     {
-      "timestamp": "2026-08-26 09:59:07",
-      "category": "2. Core Engine & Chaining",
-      "test_name": "Recursive Text Splitter Hierarchy",
-      "points": 5.0,
-      "max_pts": 5.0,
-      "latency_ms": 0.02,
-      "status": "PASS",
-      "detail": "3 chunks produced"
-    },
-    {
-      "timestamp": "2026-08-26 09:59:07",
       "category": "3. Graph & State Machine",
-      "test_name": "Conditional Routing StateGraph",
-      "points": 10.0,
-      "max_pts": 10.0,
-      "latency_ms": 0.03,
-      "status": "PASS",
-      "detail": "Dual branch verified"
+      "name": "Cyclic StateGraph Dynamic Routing",
+      "allocated": 7.5,
+      "awarded": 7.5,
+      "duration_ms": 0.018200000340584666,
+      "passed": true,
+      "error": null
     },
     {
-      "timestamp": "2026-08-26 09:59:07",
       "category": "3. Graph & State Machine",
-      "test_name": "ReAct Cyclic Tool Loop",
-      "points": 10.0,
-      "max_pts": 10.0,
-      "latency_ms": 0.08,
-      "status": "PASS",
-      "detail": "Tool call resolved"
+      "name": "ReAct Autonomous Tool Loop",
+      "allocated": 7.5,
+      "awarded": 7.5,
+      "duration_ms": 0.07869999535614625,
+      "passed": true,
+      "error": null
     },
     {
-      "timestamp": "2026-08-26 09:59:07",
       "category": "4. Memory & Vector Store",
-      "test_name": "Rolling ConversationBufferMemory",
-      "points": 5.0,
-      "max_pts": 5.0,
-      "latency_ms": 0.02,
-      "status": "PASS",
-      "detail": "Window pruning verified"
+      "name": "Rolling ConversationBuffer Window",
+      "allocated": 5.0,
+      "awarded": 5.0,
+      "duration_ms": 0.012099997547920793,
+      "passed": true,
+      "error": null
     },
     {
-      "timestamp": "2026-08-26 09:59:07",
       "category": "4. Memory & Vector Store",
-      "test_name": "SQLite Persistent Entity Storage",
-      "points": 5.0,
-      "max_pts": 5.0,
-      "latency_ms": 28.58,
-      "status": "PASS",
-      "detail": "ACID disk persistence verified"
+      "name": "SQLite Entity Memory ACID Persistence",
+      "allocated": 5.0,
+      "awarded": 5.0,
+      "duration_ms": 0.43729999742936343,
+      "passed": true,
+      "error": null
     },
     {
-      "timestamp": "2026-08-26 09:59:07",
       "category": "4. Memory & Vector Store",
-      "test_name": "MicroVectorStore Cosine Precision",
-      "points": 5.0,
-      "max_pts": 5.0,
-      "latency_ms": 0.28,
-      "status": "PASS",
-      "detail": "Score: 0.9999"
+      "name": "MicroVectorStore Pure Cosine Precision",
+      "allocated": 5.0,
+      "awarded": 5.0,
+      "duration_ms": 0.2358999990974553,
+      "passed": true,
+      "error": null
     },
     {
-      "timestamp": "2026-08-26 09:59:07",
-      "category": "5. Serve & Trace Engine",
-      "test_name": "1-Line REST HTTP Server",
-      "points": 8.0,
-      "max_pts": 8.0,
-      "latency_ms": 144.09,
-      "status": "PASS",
-      "detail": "Served on port 8316"
+      "category": "5. Serve & Live Dashboard",
+      "name": "1-Line REST, SSE & Single-File Web Dashboard UI",
+      "allocated": 15.0,
+      "awarded": 15.0,
+      "duration_ms": 533.4035999985645,
+      "passed": true,
+      "error": null
     },
     {
-      "timestamp": "2026-08-26 09:59:07",
-      "category": "5. Serve & Trace Engine",
-      "test_name": "Hierarchical Tracer & TPS Meter",
-      "points": 7.0,
-      "max_pts": 7.0,
-      "latency_ms": 10.84,
-      "status": "PASS",
-      "detail": "ANSI Tree verified"
+      "category": "6. Device & Ecosystem Tools",
+      "name": "Native Hardware Tooling (Battery, Sensors, GPS)",
+      "allocated": 7.5,
+      "awarded": 7.5,
+      "duration_ms": 74.66489999933401,
+      "passed": true,
+      "error": null
     },
     {
-      "timestamp": "2026-08-26 09:59:07",
-      "category": "6. Device Hardware & Local LLM",
-      "test_name": "Termux Hardware Native Tooling",
-      "points": 5.0,
-      "max_pts": 5.0,
-      "latency_ms": 35.86,
-      "status": "PASS",
-      "detail": "Battery: 85%"
+      "category": "6. Device & Ecosystem Tools",
+      "name": "uno-km Ecosystem Integrations (STT, Diffusion, Playwright)",
+      "allocated": 7.5,
+      "awarded": 7.5,
+      "duration_ms": 27.19020000222372,
+      "passed": true,
+      "error": null
     },
     {
-      "timestamp": "2026-08-26 09:59:07",
-      "category": "6. Device Hardware & Local LLM",
-      "test_name": "Live On-Device LLM (Host Mode Simulated)",
-      "points": 10.0,
-      "max_pts": 10.0,
-      "latency_ms": 0.05,
-      "status": "PASS",
-      "detail": "Simulated pass on dev workstation"
+      "category": "7. Local Tuning & Spectrum",
+      "name": "Hardware Fine-Tuning & Full-Spectrum Sampling",
+      "allocated": 10.0,
+      "awarded": 10.0,
+      "duration_ms": 0.039200000173877925,
+      "passed": true,
+      "error": null
     }
-  ],
-  "incidents": []
+  ]
 }
