@@ -301,7 +301,7 @@ def cmd_stop() -> None:
     from termux_aichain.core.process_identity import verify_managed_process_ownership
     lock_dir = Path(tempfile.gettempdir()) / "termux-aichain"
     stopped = False
-    cleaned_stale = False
+    quarantined = False
 
     if lock_dir.exists():
         for lock_file in lock_dir.glob("*.lock"):
@@ -318,8 +318,11 @@ def cmd_stop() -> None:
                             pass
                         lock_file.unlink(missing_ok=True)
                     else:
-                        cleaned_stale = True
-                        lock_file.unlink(missing_ok=True)
+                        # Fail-closed: Quarantine unverifiable lock to prevent state confusion
+                        quarantine_dir = lock_dir / "quarantine"
+                        quarantine_dir.mkdir(parents=True, exist_ok=True)
+                        shutil.move(str(lock_file), str(quarantine_dir / lock_file.name))
+                        quarantined = True
                 else:
                     lock_file.unlink(missing_ok=True)
             except Exception:
@@ -327,13 +330,19 @@ def cmd_stop() -> None:
 
     if stopped:
         print("✓ Local model server stopped successfully.")
-    elif cleaned_stale:
-        print("✓ Cleaned stale lock files (no active process matching lock identity was running).")
+    elif quarantined:
+        print("✓ Quarantined unverifiable lock files (process termination prevented to preserve safety).")
     else:
         print("No active managed server found to stop.")
 
 def cmd_run(model_name: str, replace: bool = False) -> None:
     """1-Command User Experience: ensures model & server are ready, then launches interactive session."""
+    from termux_aichain.core.local_agent import (
+        ServerIdentityVerifier,
+        ServerConnectionRefusedError,
+        ServerProtocolMismatchError,
+        ModelIdentityMismatchError,
+    )
     target = model_name.lower().strip()
     if target in MODELS_REGISTRY:
         try:
@@ -342,6 +351,18 @@ def cmd_run(model_name: str, replace: bool = False) -> None:
             print(f"[-] Model verification failed: {str(ex)}")
             return
     elif os.path.exists(target):
+        if not os.path.isfile(target):
+            print(f"[-] Target path '{target}' is not a regular file.")
+            return
+        # Verify GGUF magic header
+        try:
+            with open(target, "rb") as f_chk:
+                if f_chk.read(4) != b"GGUF":
+                    print(f"[-] File '{target}' is not a valid GGUF binary format.")
+                    return
+        except Exception as ex:
+            print(f"[-] Cannot read file '{target}': {str(ex)}")
+            return
         model_file = target
     else:
         print(f"[-] Unknown model '{model_name}'. Available options:")
@@ -351,15 +372,26 @@ def cmd_run(model_name: str, replace: bool = False) -> None:
 
     print("✓ Model verified")
 
-    # Check if existing server is running
+    # Check if existing server is running with strict identity and model matching
     endpoint = "http://127.0.0.1:8080"
     server_alive = False
+    expected_model_id = os.path.basename(model_file)
     try:
-        with urllib.request.urlopen(f"{endpoint}/health", timeout=1.0) as resp:
-            if resp.status == 200:
-                server_alive = True
-    except Exception:
+        ServerIdentityVerifier.verify(
+            endpoint_url=endpoint,
+            timeout_seconds=1.0,
+            expected_protocol_version="1.0",
+            expected_model_id=expected_model_id
+        )
+        server_alive = True
+    except ServerConnectionRefusedError:
         server_alive = False
+    except (ServerProtocolMismatchError, ModelIdentityMismatchError) as exc:
+        if not replace:
+            print(f"[-] Port 8080 is occupied by an incompatible server: {str(exc)}")
+            print("    Hint: Pass --replace to terminate existing instance and launch with requested model.")
+            return
+        server_alive = True
 
     if server_alive and not replace:
         print("✓ Connected to existing local server")

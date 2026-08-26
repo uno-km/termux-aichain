@@ -90,3 +90,23 @@ def test_download_verified_model_mismatch_raises_and_cleans_tmp(tmp_path, monkey
     # Temporary file must be deleted on failure
     tmp_files = list(tmp_path.glob("*.tmp"))
     assert len(tmp_files) == 0
+
+def test_cmd_run_rejects_incompatible_server(monkeypatch, tmp_path, capsys):
+    from termux_aichain.cli import cmd_run
+    class FakeHealthResp:
+        status = 200
+        def read(self, size): return b'{"status":"ok","service":"termux-aichain","protocolVersion":"1.0","model":{"id":"different.gguf"}}'
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+
+    class FakeOpener:
+        def open(self, *args, **kwargs): return FakeHealthResp()
+
+    monkeypatch.setattr("urllib.request.build_opener", lambda *args: FakeOpener())
+
+    # Create dummy valid GGUF model
+    m = tmp_path / "target.gguf"
+    m.write_bytes(b"GGUF_TEST_DATA")
+    cmd_run(str(m), replace=False)
+    out = capsys.readouterr().out
+    assert "occupied by an incompatible server" in out

@@ -153,7 +153,10 @@ class ServerIdentityVerifier:
         if expected_service and service_id != expected_service:
             raise ServerProtocolMismatchError(f"Service mismatch: expected '{expected_service}', got '{service_id}'.")
 
-        proto_ver = str(payload.get("protocolVersion") or payload.get("version") or "1.0")
+        raw_protocol = payload.get("protocolVersion") or payload.get("version")
+        if expected_protocol_version and not raw_protocol:
+            raise ServerProtocolMismatchError("Server did not report a protocol version (Fail-Closed).")
+        proto_ver = str(raw_protocol or "")
         if expected_protocol_version and proto_ver != expected_protocol_version:
             raise ServerProtocolMismatchError(f"Protocol version mismatch: expected '{expected_protocol_version}', got '{proto_ver}'.")
 
@@ -374,15 +377,35 @@ class LocalAgent:
         expected_id = resolved_path.name if resolved_path else model
         # Check if server is already running with the expected model identity
         try:
-            ServerIdentityVerifier.verify(endpoint_url=endpoint, timeout_seconds=1.0, expected_model_id=expected_id)
-            # Server is alive -> Connect immediately (ATTACHED)
-            return cls.connect(endpoint=endpoint, tools=tools, system_prompt=system_prompt)
-        except Exception:
+            ServerIdentityVerifier.verify(
+                endpoint_url=endpoint,
+                timeout_seconds=1.0,
+                expected_protocol_version="1.0",
+                expected_model_id=expected_id
+            )
+            # Server is alive and verified -> Connect safely via standard validated pipeline
+            return cls.create(
+                mode="connect",
+                endpoint=endpoint,
+                connect=ConnectConfig(
+                    expected_model_id=expected_id,
+                    protocol_version="1.0"
+                ),
+                tools=tools or [],
+                system_prompt=system_prompt
+            )
+        except ServerConnectionRefusedError:
+            # Server is not running -> Proceed to managed daemon spawn
             pass
+        except (ServerProtocolMismatchError, ModelIdentityMismatchError) as exc:
+            raise DuplicateServerOwnershipError(
+                f"Existing server at {endpoint} conflicts with requested model '{expected_id}': {str(exc)}"
+            ) from exc
 
         if not resolved_path:
-            # Fallback to direct connect with user hint
-            return cls(endpoint=endpoint, tools=tools, system_prompt=system_prompt)
+            raise FileNotFoundError(
+                f"Model '{model}' was not found in ~/models and no verified compatible server is running at {endpoint}."
+            )
 
         return cls.create(
             mode="managed",

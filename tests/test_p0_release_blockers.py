@@ -512,3 +512,67 @@ def test_cors_scheme_and_userinfo_rejected():
     assert is_allowed_loopback_origin("http://admin:pass@localhost:3000") is False
     assert is_allowed_loopback_origin("http://localhost.evil.example") is False
     assert is_allowed_loopback_origin("") is False
+
+# 36. Missing protocolVersion in /health fails closed (P0-3)
+def test_missing_protocol_version_fails_closed(monkeypatch):
+    import io
+    from termux_aichain.core.local_agent import ServerIdentityVerifier, ServerProtocolMismatchError
+    class FakeHealthResp:
+        status = 200
+        def read(self, size): return b'{"status":"ok","service":"termux-aichain"}'
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+
+    class FakeOpener:
+        def open(self, *args, **kwargs): return FakeHealthResp()
+
+    monkeypatch.setattr("urllib.request.build_opener", lambda *args: FakeOpener())
+
+    with pytest.raises(ServerProtocolMismatchError, match="Server did not report a protocol version"):
+        ServerIdentityVerifier.verify(
+            endpoint_url="http://127.0.0.1:8080",
+            expected_protocol_version="1.0"
+        )
+
+# 37. LocalAgent.local() does not swallow model identity conflict (P0-2)
+def test_local_agent_local_does_not_swallow_model_conflict(monkeypatch, tmp_path):
+    import io
+    from termux_aichain.core.local_agent import LocalAgent, DuplicateServerOwnershipError
+    class FakeHealthResp:
+        status = 200
+        def read(self, size): return b'{"status":"ok","service":"termux-aichain","protocolVersion":"1.0","model":{"id":"other-model.gguf"}}'
+        def __enter__(self): return self
+        def __exit__(self, *args): pass
+
+    class FakeOpener:
+        def open(self, *args, **kwargs): return FakeHealthResp()
+
+    monkeypatch.setattr("urllib.request.build_opener", lambda *args: FakeOpener())
+    monkeypatch.setattr("urllib.request.urlopen", lambda *args, **kwargs: FakeHealthResp())
+
+    # Create dummy local model
+    m = tmp_path / "target-model.gguf"
+    m.write_bytes(b"GGUF_TEST")
+
+    with pytest.raises(DuplicateServerOwnershipError, match="Existing server at http://127.0.0.1:8080 conflicts"):
+        LocalAgent.local(str(m))
+
+# 38. LocalAgent.local() missing model raises FileNotFoundError (P0-2)
+def test_local_agent_local_missing_model_raises_file_not_found(monkeypatch):
+    import urllib.error
+    from termux_aichain.core.local_agent import LocalAgent
+    class FailingOpener:
+        def open(self, *args, **kwargs): raise urllib.error.URLError("connection refused")
+
+    monkeypatch.setattr("urllib.request.build_opener", lambda *args: FailingOpener())
+    with pytest.raises(FileNotFoundError, match="was not found in ~/models"):
+        LocalAgent.local("completely-non-existent-model")
+
+# 39. cmd_run rejects user-specified non-GGUF file (P1-3)
+def test_cmd_run_rejects_non_gguf_user_file(tmp_path, capsys):
+    from termux_aichain.cli import cmd_run
+    bad_file = tmp_path / "malicious.bin"
+    bad_file.write_bytes(b"NOT_A_GGUF_HEADER")
+    cmd_run(str(bad_file))
+    out = capsys.readouterr().out
+    assert "not a valid GGUF binary format" in out
