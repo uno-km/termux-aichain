@@ -189,27 +189,36 @@ def cmd_info() -> None:
     print("- Documentation   : https://uno-km.vercel.app/lib/aichain/")
     print("=" * 75)
 
-def cmd_pull(model_name: str) -> None:
-    """Downloads verified lightweight model GGUF with streaming SHA-256 verification."""
+def download_verified_model(model_name: str, force: bool = False) -> str:
+    """Downloads lightweight model GGUF with strict streaming SHA-256 and GGUF header verification."""
     import hashlib
+    import hmac
     target = model_name.lower().strip()
     if target not in MODELS_REGISTRY:
-        print(f"[-] Unknown model '{model_name}'. Available options:")
-        for k, v in MODELS_REGISTRY.items():
-            print(f"    - {k} ({v['size_desc']})")
-        return
+        raise ValueError(f"Unknown model identifier '{model_name}'. Available options: {list(MODELS_REGISTRY.keys())}")
 
     info = MODELS_REGISTRY[target]
     dest_dir = os.path.expanduser("~/models")
     os.makedirs(dest_dir, exist_ok=True)
     dest_file = os.path.join(dest_dir, info["filename"])
     tmp_file = f"{dest_file}.download.tmp"
+    expected_sha = info["sha256"].lower()
 
-    if os.path.exists(dest_file):
-        print(f"[*] Model already exists at: {dest_file}")
-        return
+    if os.path.exists(dest_file) and not force:
+        # Strict pre-verification of existing file checksum
+        hasher = hashlib.sha256()
+        with open(dest_file, "rb") as f_in:
+            while True:
+                chunk = f_in.read(1024 * 1024)
+                if not chunk:
+                    break
+                hasher.update(chunk)
+        actual_sha = hasher.hexdigest().lower()
+        if hmac.compare_digest(actual_sha, expected_sha):
+            return dest_file
+        print(f"[!] Existing model checksum mismatch (corrupted). Re-downloading {target}...")
 
-    print(f"[*] Downloading {target} ({info['size_desc']}) with SHA-256 integrity verification...")
+    print(f"[*] Downloading {target} ({info['size_desc']}) with cryptographic SHA-256 verification...")
     hasher = hashlib.sha256()
     try:
         req = urllib.request.Request(info["url"], headers={"User-Agent": f"termux-aichain/{__version__}"})
@@ -229,14 +238,27 @@ def cmd_pull(model_name: str) -> None:
             if magic != b"GGUF":
                 raise ValueError("Downloaded file is not a valid GGUF binary format (missing GGUF magic header).")
 
+        # Strict Cryptographic SHA-256 Checksum Verification
+        actual_sha = hasher.hexdigest().lower()
+        if not hmac.compare_digest(actual_sha, expected_sha):
+            raise ValueError(f"Model SHA-256 integrity verification failed: expected {expected_sha}, got {actual_sha}")
+
         os.replace(tmp_file, dest_file)
-        print(f"[+] Successfully verified and downloaded: {dest_file}")
-    except Exception as ex:
+        return dest_file
+    except Exception:
         if os.path.exists(tmp_file):
             try:
                 os.unlink(tmp_file)
             except Exception:
                 pass
+        raise
+
+def cmd_pull(model_name: str) -> None:
+    """Downloads verified lightweight model GGUF with streaming SHA-256 verification."""
+    try:
+        dest_file = download_verified_model(model_name)
+        print(f"[+] Successfully verified and ready: {dest_file}")
+    except Exception as ex:
         print(f"[-] Download failed: {str(ex)}")
 
 def cmd_models() -> None:
@@ -252,21 +274,26 @@ def cmd_models() -> None:
     print("=" * 70)
 
 def cmd_status(verbose: bool = False) -> None:
-    """Displays concise server readiness and model status."""
+    """Displays concise server readiness and model status using ServerIdentityVerifier."""
+    from termux_aichain.core.local_agent import ServerIdentityVerifier
     endpoint = "http://127.0.0.1:8080"
     try:
-        req = urllib.request.Request(f"{endpoint}/health")
-        with urllib.request.urlopen(req, timeout=2.0) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
-            print(f"Status:   ready")
-            print(f"Service:  {data.get('service', 'termux-aichain')}")
-            print(f"Endpoint: {endpoint}")
-            if "model" in data and isinstance(data["model"], dict):
-                print(f"Model:    {data['model'].get('id', 'default')}")
-            if verbose:
-                print(f"Details:  {json.dumps(data, indent=2)}")
-    except Exception:
+        data = ServerIdentityVerifier.verify(
+            endpoint_url=endpoint,
+            timeout_seconds=2.0,
+            expected_protocol_version="1.0"
+        )
+        print("Status:   ready")
+        print(f"Service:  {data.get('service', 'termux-aichain')}")
+        print(f"Endpoint: {endpoint}")
+        if "model" in data and isinstance(data["model"], dict):
+            print(f"Model:    {data['model'].get('id', 'default')}")
+        if verbose:
+            print(f"Details:  {json.dumps(data, indent=2)}")
+    except Exception as ex:
         print("Status:   stopped (No local server running on port 8080)")
+        if verbose:
+            print(f"Reason:   {str(ex)}")
         print("Hint:     Run 'termux-aichain run qwen-2.5-1.5b' to start local AI.")
 
 def cmd_stop() -> None:
@@ -308,28 +335,19 @@ def cmd_stop() -> None:
 def cmd_run(model_name: str, replace: bool = False) -> None:
     """1-Command User Experience: ensures model & server are ready, then launches interactive session."""
     target = model_name.lower().strip()
-    if target not in MODELS_REGISTRY and not os.path.exists(target):
+    if target in MODELS_REGISTRY:
+        try:
+            model_file = download_verified_model(target)
+        except Exception as ex:
+            print(f"[-] Model verification failed: {str(ex)}")
+            return
+    elif os.path.exists(target):
+        model_file = target
+    else:
         print(f"[-] Unknown model '{model_name}'. Available options:")
         for k, v in MODELS_REGISTRY.items():
             print(f"    - {k} ({v['size_desc']})")
         return
-
-    models_dir = os.path.expanduser("~/models")
-    os.makedirs(models_dir, exist_ok=True)
-    
-    if target in MODELS_REGISTRY:
-        info = MODELS_REGISTRY[target]
-        model_file = os.path.join(models_dir, info["filename"])
-        if not os.path.exists(model_file):
-            print(f"[*] Model not found locally. Downloading {target} ({info['size_desc']})...")
-            try:
-                urllib.request.urlretrieve(info["url"], model_file)
-                print(f"[+] Download complete: {model_file}")
-            except Exception as ex:
-                print(f"[-] Download failed: {str(ex)}")
-                return
-    else:
-        model_file = target
 
     print("✓ Model verified")
 

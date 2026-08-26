@@ -153,8 +153,8 @@ class ServerIdentityVerifier:
         if expected_service and service_id != expected_service:
             raise ServerProtocolMismatchError(f"Service mismatch: expected '{expected_service}', got '{service_id}'.")
 
-        proto_ver = payload.get("protocolVersion") or payload.get("version") or "1.0"
-        if expected_protocol_version and proto_ver != expected_protocol_version and not proto_ver.startswith(expected_protocol_version):
+        proto_ver = str(payload.get("protocolVersion") or payload.get("version") or "1.0")
+        if expected_protocol_version and proto_ver != expected_protocol_version:
             raise ServerProtocolMismatchError(f"Protocol version mismatch: expected '{expected_protocol_version}', got '{proto_ver}'.")
 
         model_info = payload.get("model", {})
@@ -371,9 +371,10 @@ class LocalAgent:
                 break
 
         endpoint = "http://127.0.0.1:8080"
-        # Check if server is already running
+        expected_id = resolved_path.name if resolved_path else model
+        # Check if server is already running with the expected model identity
         try:
-            ServerIdentityVerifier.verify(endpoint_url=endpoint, timeout_seconds=1.0)
+            ServerIdentityVerifier.verify(endpoint_url=endpoint, timeout_seconds=1.0, expected_model_id=expected_id)
             # Server is alive -> Connect immediately (ATTACHED)
             return cls.connect(endpoint=endpoint, tools=tools, system_prompt=system_prompt)
         except Exception:
@@ -724,7 +725,7 @@ class LocalAgent:
                     msvcrt.locking(lock_handle.fileno(), msvcrt.LK_NBLCK, 1)
                     owns_lock = True
                 else:
-                    owns_lock = True
+                    raise LocalAgentError("No supported OS file-lock backend (fcntl or msvcrt) is available.")
             except (BlockingIOError, IOError, OSError):
                 owns_lock = False
 
@@ -799,10 +800,14 @@ class LocalAgent:
 
                 from termux_aichain.core.process_identity import get_process_start_identity
                 target_pid = proc.pid if proc else os.getpid()
+                start_ident = get_process_start_identity(target_pid)
+                if not start_ident:
+                    raise LocalAgentError(f"Unable to establish trustworthy process start identity for target process {target_pid}.")
+
                 lock_meta = {
                     "schemaVersion": 1,
                     "pid": target_pid,
-                    "startIdentity": get_process_start_identity(target_pid),
+                    "startIdentity": start_ident,
                     "executablePath": shutil.which(m_cfg.binary_name) or m_cfg.binary_name,
                     "startedAt": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                     "endpoint": endpoint_url,

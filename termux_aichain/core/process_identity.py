@@ -51,32 +51,45 @@ def get_process_start_identity(pid: int) -> str:
         except Exception:
             pass
 
-    return f"generic-pid-{pid}"
+    # 3. Fallback: Fail-closed (do NOT return generic PID)
+    return ""
 
 def verify_managed_process_ownership(pid: int, lock_meta: Dict[str, Any]) -> bool:
-    """Strictly validates that PID matches the recorded startIdentity and executable metadata."""
+    """Strictly validates that PID matches the recorded startIdentity, schemaVersion, and executable metadata."""
     if pid <= 0 or not isinstance(lock_meta, dict):
         return False
 
-    expected_identity = lock_meta.get("startIdentity")
+    # P0-5: Validate schemaVersion and required fields
+    if lock_meta.get("schemaVersion") != 1:
+        return False
+
+    required_fields = {"schemaVersion", "pid", "startIdentity", "executablePath"}
+    if not required_fields.issubset(lock_meta.keys()):
+        return False
+
+    if lock_meta.get("pid") != pid:
+        return False
+
+    expected_identity = str(lock_meta.get("startIdentity", ""))
     if not expected_identity:
-        # Strict fail-closed: missing startIdentity in lock metadata rejects signal sending
         return False
 
     current_identity = get_process_start_identity(pid)
     if not current_identity or not hmac.compare_digest(current_identity, expected_identity):
         return False
 
-    # Check executable path if present in Linux
+    # P0-4: Strict realpath comparison on Linux (zero substring matching)
     proc_exe = Path(f"/proc/{pid}/exe")
-    expected_executable = lock_meta.get("executablePath")
-    if proc_exe.exists() and expected_executable:
+    expected_executable = str(lock_meta.get("executablePath", ""))
+    if proc_exe.exists():
+        if not expected_executable:
+            return False
         try:
-            real_target = os.path.realpath(proc_exe)
-            real_expected = os.path.realpath(expected_executable)
-            if real_target != real_expected and not any(k in real_target for k in ("llama-server", "termux-aichain")):
+            real_target = os.path.normcase(os.path.realpath(proc_exe))
+            real_expected = os.path.normcase(os.path.realpath(expected_executable))
+            if not hmac.compare_digest(real_target, real_expected):
                 return False
         except Exception:
-            pass
+            return False
 
     return True
