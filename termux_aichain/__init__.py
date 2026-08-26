@@ -59,6 +59,7 @@ from termux_aichain.memory.buffer import ConversationBufferMemory
 from termux_aichain.memory.sqlite import SQLiteEntityMemory, SQLiteVectorStore
 from termux_aichain.memory.extractor import FactExtractor
 from termux_aichain.serve.server import AgentServer, serve
+from termux_aichain.serve.dashboard import DASHBOARD_HTML
 from termux_aichain.trace.tracer import TraceSpan, Tracer, traceable
 from termux_aichain.device.tools import (
     get_battery_status,
@@ -70,6 +71,12 @@ from termux_aichain.device.tools import (
     speak_tts,
     execute_shell,
     get_default_device_tools,
+)
+from termux_aichain.device.ecosystem import (
+    transcribe_speech,
+    generate_diffusion_image,
+    browse_web_headless,
+    get_ecosystem_tools,
 )
 
 __all__ = [
@@ -112,6 +119,7 @@ __all__ = [
     "FactExtractor",
     "AgentServer",
     "serve",
+    "DASHBOARD_HTML",
     "TraceSpan",
     "Tracer",
     "traceable",
@@ -124,4 +132,8 @@ __all__ = [
     "speak_tts",
     "execute_shell",
     "get_default_device_tools",
+    "transcribe_speech",
+    "generate_diffusion_image",
+    "browse_web_headless",
+    "get_ecosystem_tools",
 ]
