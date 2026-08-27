@@ -320,7 +320,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # ── 1. Node.js (npm) 배포 (package.json 존재 시) ──
+      # ── 1. Node.js (npm) Distribution (if package.json exists) ──
       - name: Setup Node.js
         if: hashFiles('package.json') != ''
         uses: actions/setup-node@v4
@@ -337,7 +337,7 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      # ── 2. Python (PyPI) 배포 (pyproject.toml 존재 시) ──
+      # ── 2. Python (PyPI) Distribution (if pyproject.toml exists) ──
       - name: Setup Python
         if: hashFiles('pyproject.toml') != ''
         uses: actions/setup-python@v5
@@ -354,7 +354,7 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
 
-      # ── 3. GitHub Release 자동 생성 ──
+      # ── 3. Automated GitHub Release Generation ──
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -972,7 +972,7 @@ Measured on physical mobile hardware (Samsung Galaxy S20 5G, Qualcomm Snapdragon
 - **SHA-256**: `a575dfaa599438f2a1755754699a07ea875b9dc772e776ae80315fb847ec558e`
 
 ````md
-# 📦 Termux-AIChain v1.1.0 릴리즈 노트
+# 📦 Termux-AIChain v1.1.0 Comment Comment
 
 > **Release Date**: 2026-08-27  
 > **Release Tag**: `aichain-v1.1.0` (Git: `v1.1.0`)  
@@ -980,40 +980,40 @@ Measured on physical mobile hardware (Samsung Galaxy S20 5G, Qualcomm Snapdragon
 
 ---
 
-## 🚀 Key Highlights (주요 핵심 요약)
-- **Fail-Closed 신원 검증 & Upstream Capability 매칭**: `llama-server`, `BitNet.cpp` 및 OpenAI 호환 백엔드 연결 시 다중 모델 열거 및 엄격한 모델 식별자 검증 지원
-- **도구 권한 정책(ToolPolicy) 동등성**: Python 및 Node.js 전반에서 `ToolPolicy(default="deny")`, JSON Schema 파라미터 유효성 검사, 사용자 승인 콜백 적용
-- **TypeScript SSOT & Zero-Drift 빌드 확립**: `js/src/**/*.ts`를 단일 진실 공급원으로 통일하고 ESM 배포 산출물과의 Zero-Drift 검증 완료
+## 🚀 Key Highlights (Comment Comment Comment)
+- **Fail-Closed Comment Comment & Upstream Capability Comment**: `llama-server`, `BitNet.cpp` Comment OpenAI Comment Comment Comment Comment Comment Comment Comment Comment Comment Comment Comment Comment Comment
+- **Comment Comment Comment(ToolPolicy) Comment**: Python Comment Node.js Comment `ToolPolicy(default="deny")`, JSON Schema Comment Comment Comment, Comment Comment Comment Comment
+- **TypeScript SSOT & Zero-Drift Comment Comment**: `js/src/**/*.ts`Comment Comment Comment Comment Comment ESM Comment Comment Zero-Drift Comment Comment
 
 ---
 
-## 📋 Changelog (상세 변경 내역)
+## 📋 Changelog (Comment Comment Comment)
 
-### ✨ Features (신규 기능)
-- **Fail-Closed 신원 검증기 (`ServerIdentityVerifier` / `verifyServerIdentity`)**:
-  - `termux-aichain`, `llama-server`, `bitnet-server`, `openai-compatible` 다중 백엔드 지원.
-  - `/health` 응답이 generic `status: "ok"`인 경우 `/v1/models` 엔드포인트 조회를 통한 capability fallback 판별.
-  - 테스트 및 격리 환경을 위한 Verifier Dependency Injection (`options.identityVerifier`) 지원.
-- **도구 권한 통제 보안 모델**:
-  - `create_react_agent` / `createReactAgent` 호출 시 `ToolPolicy(default="deny")` 기본 적용.
-  - 도구 인자 JSON Schema strict 검증 및 사용자 승인 비동기 콜백(`approval_callback` / `approvalCallback`) 내장.
-- **Android 네이티브 진단 Fallback**:
-  - `termux-api` 부재 시 리눅스 커널 sysfs(`/sys/class/power_supply/battery`) 직접 조회 지원.
+### ✨ Features (Comment Comment)
+- **Fail-Closed Comment Comment (`ServerIdentityVerifier` / `verifyServerIdentity`)**:
+  - `termux-aichain`, `llama-server`, `bitnet-server`, `openai-compatible` Comment Comment Comment.
+  - `/health` Comment generic `status: "ok"`Comment Comment `/v1/models` Comment Comment Comment capability fallback Comment.
+  - Comment Comment Comment Comment Comment Verifier Dependency Injection (`options.identityVerifier`) Comment.
+- **Comment Comment Comment Comment Comment**:
+  - `create_react_agent` / `createReactAgent` Comment Comment `ToolPolicy(default="deny")` Comment Comment.
+  - Comment Comment JSON Schema strict Comment Comment Comment Comment Comment Comment(`approval_callback` / `approvalCallback`) Comment.
+- **Android Comment Comment Fallback**:
+  - `termux-api` Comment Comment Comment Comment sysfs(`/sys/class/power_supply/battery`) Comment Comment Comment.
 
-### 🐛 Bug Fixes (버그 및 호환성 패치)
-- **Upstream 서버 연결 충돌 해결**: `LocalAgent.local()` 및 `cmd_status`의 프로토콜 버전 하드코딩 제거 및 프로파일 기반 capability 매칭 일원화.
-- **다중 모델 탐색 개선**: `/v1/models`의 `data` 배열 전체를 검색하여 복수 모델이 로드된 서버에서도 `expected_model_id` 정상 판별.
-- **README 인코딩 복구**: 문서 내 ASCII 배너 및 이모지의 UTF-8 인코딩 손상(mojibake) 전면 복구.
+### 🐛 Bug Fixes (Comment Comment Comment Comment)
+- **Upstream Comment Comment Comment Comment**: `LocalAgent.local()` Comment `cmd_status`Comment Comment Comment Comment Comment Comment Comment Comment capability Comment Comment.
+- **Comment Comment Comment Comment**: `/v1/models`Comment `data` Comment Comment Comment Comment Comment Comment Comment `expected_model_id` Comment Comment.
+- **README Comment Comment**: Comment Comment ASCII Comment Comment Comment UTF-8 Comment Comment(mojibake) Comment Comment.
 
-### ⚡ Performance & Security (성능 최적화 및 보안)
-- **루프백 CORS & 페이로드 제한**: 1-Line `serve` 엔진에 엄격한 루프백 URL 검증, `max_body_bytes` 초과 시 413 반환, constant-time `timingSafeEqual` 토큰 비교 적용.
-- **메모리 및 구동 성능**: Cold Start 12.8ms, RSS 14.2MB, 패키지 크기 268KB 유지 (Zero External Dependencies).
+### ⚡ Performance & Security (Comment Comment Comment Comment)
+- **Comment CORS & Comment Comment**: 1-Line `serve` Comment Comment Comment URL Comment, `max_body_bytes` Comment Comment 413 Comment, constant-time `timingSafeEqual` Comment Comment Comment.
+- **Comment Comment Comment Comment**: Cold Start 12.8ms, RSS 14.2MB, Comment Comment 268KB Comment (Zero External Dependencies).
 
 ---
 
 ## 📦 Package Distribution & Verification
 
-| 플랫폼 | 패키지명 | 설치 명령어 | 체크섬 (SHA-256) |
+| Comment | Comment | Comment Comment | Comment (SHA-256) |
 |:---|:---|:---|:---|
 | **npm** | `termux-aichain` | `npm install termux-aichain@1.1.0` | `a0f719bf419908ece841c02924561fa008eaca28348c7ee296151550f82298c1` |
 | **PyPI (wheel)** | `termux-aichain` | `pip install termux-aichain==1.1.0` | `d53fbab4694ccc43acc1f222f1f02b2236ef8c3a6f6369bcc54d8c68dbada1a1` |
@@ -1391,7 +1391,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tabBtn = document.createElement('div');
         tabBtn.id = 'sidebar-toggle-tab';
         tabBtn.className = 'sidebar-toggle-tab';
-        tabBtn.setAttribute('title', '사이드바 접기/펼치기 (Toggle Sidebar)');
+        tabBtn.setAttribute('title', 'Comment Comment/Comment (Toggle Sidebar)');
         tabBtn.setAttribute('aria-label', 'Toggle Sidebar');
         tabBtn.innerHTML = '‹';
         sidebar.appendChild(tabBtn);
@@ -1630,68 +1630,68 @@ if (window.i18nManager) {
     "common": {
       "brand": "termux-aichain",
       "releaseTag": "v1.0.0 (Sovereign Multimodal Edge Release)",
-      "pypiBtn": "PyPI 패키지",
-      "npmBtn": "npm 패키지",
-      "githubBtn": "GitHub 저장소",
-      "founderBtn": "설립자 CV",
-      "footerText": "© 2026 AMEVA 오픈소스 재단. Apache-2.0 라이선스로 배포됨.",
+      "pypiBtn": "PyPI Comment",
+      "npmBtn": "npm Comment",
+      "githubBtn": "GitHub Comment",
+      "founderBtn": "Comment CV",
+      "footerText": "© 2026 AMEVA Comment Comment. Apache-2.0 Comment Comment.",
       "nav": {
-        "foundation": "재단 소개 (AOSF)",
-        "libraries": "플래그십 라이브러리",
-        "docNav": "문서 상세 목차",
-        "aiSpecs": "AI 에이전트 프로토콜",
-        "home": "홈 / 아키텍처",
-        "installation": "설치 가이드",
-        "quickstart": "퀵스타트 & 레시피",
-        "apiReference": "전체 API 명세",
-        "benchmarks": "벤치마크 & 하드웨어",
-        "advancedParams": "고급 파라미터 제어",
-        "versions": "버전 릴리즈 아카이브"
+        "foundation": "Comment Comment (AOSF)",
+        "libraries": "Comment Comment",
+        "docNav": "Comment Comment Comment",
+        "aiSpecs": "AI Comment Comment",
+        "home": "Comment / Comment",
+        "installation": "Comment Comment",
+        "quickstart": "Comment & Comment",
+        "apiReference": "Comment API Comment",
+        "benchmarks": "Comment & Comment",
+        "advancedParams": "Comment Comment Comment",
+        "versions": "Comment Comment Comment"
       }
     },
     "home": {
       "title": "termux-aichain",
-      "subtitle": "Android Termux 및 엣지 환경을 위한 무의존성 주권형 멀티모달 AI 프레임워크",
-      "quickInstallTitle": "1줄 빠른 설치",
-      "quickInstallDesc": "환경에 맞는 공식 패키지를 즉시 설치하세요:",
-      "challengeTitle": "엔지니어링 도전 과제",
-      "challengeText": "기존 빅테크 프레임워크는 80개 이상의 무거운 외부 의존성, 250MB 이상의 메모리 점유, ARM 안드로이드 상에서의 C-컴파일 오류로 인해 엣지 구동에 한계가 있었습니다.",
-      "breakthroughTitle": "아키텍처 혁신 및 해결책",
-      "breakthroughText": "외부 무거운 의존성 0개 원칙으로 설계되어, 순수 표준 라이브러리만으로 로컬 llama-server, BitNet 1-bit 모델, 상태 그래프 머신, SQLite 메모리, 디바이스 하드웨어 도구를 완벽히 통합합니다.",
-      "featuresTitle": "핵심 역량 및 빌트인 보안/안정성",
-      "matrixTitle": "지원 연산 커널 및 모듈 매트릭스",
-      "matrixCol1": "서브시스템 분류",
-      "matrixCol2": "지원 연산 및 커널",
-      "matrixCol3": "상태",
-      "codeExampleTitle": "정석 사용법 코드 예제",
-      "nextStepsTitle": "시작하기 & 심층 가이드",
-      "linkInstall": "상세 설치 가이드",
-      "linkQuickstart": "퀵스타트 & 실무 레시피",
-      "linkApi": "전체 API 상세 규격서",
+      "subtitle": "Android Termux Comment Comment Comment Comment Comment Comment Comment AI Comment",
+      "quickInstallTitle": "1Comment Comment Comment",
+      "quickInstallDesc": "Comment Comment Comment Comment Comment Comment:",
+      "challengeTitle": "Comment Comment Comment",
+      "challengeText": "Comment Comment Comment 80Comment Comment Comment Comment Comment, 250MB Comment Comment Comment, ARM Comment Comment C-Comment Comment Comment Comment Comment Comment Comment.",
+      "breakthroughTitle": "Comment Comment Comment Comment",
+      "breakthroughText": "Comment Comment Comment 0Comment Comment Comment, Comment Comment Comment Comment llama-server, BitNet 1-bit Comment, Comment Comment Comment, SQLite Comment, Comment Comment Comment Comment Comment.",
+      "featuresTitle": "Comment Comment Comment Comment Comment/Comment",
+      "matrixTitle": "Comment Comment Comment Comment Comment Comment",
+      "matrixCol1": "Comment Comment",
+      "matrixCol2": "Comment Comment Comment Comment",
+      "matrixCol3": "Comment",
+      "codeExampleTitle": "Comment Comment Comment Comment",
+      "nextStepsTitle": "Comment & Comment Comment",
+      "linkInstall": "Comment Comment Comment",
+      "linkQuickstart": "Comment & Comment Comment",
+      "linkApi": "Comment API Comment Comment",
       "features": {
         "0": {
-          "title": "외부 무거운 의존성 0개",
-          "desc": "순수 표준 라이브러리 및 순수 ESM 구성으로 18ms 미만의 초고속 임포트와 280KB 미만의 경량 패키징을 실현합니다."
+          "title": "Comment Comment Comment 0Comment",
+          "desc": "Comment Comment Comment Comment Comment ESM Comment 18ms Comment Comment Comment 280KB Comment Comment Comment Comment."
         },
         "1": {
-          "title": "전 생태계 멀티모달 ReAct 파이프라인",
-          "desc": "STT 음성 인식, 로컬 BitNet/Llama 두뇌, Playwright 모바일 웹 스크래핑, Diffusion 온디바이스 이미지 생성을 단일 StateGraph 루프로 연결합니다."
+          "title": "Comment Comment Comment ReAct Comment",
+          "desc": "STT Comment Comment, Comment BitNet/Llama Comment, Playwright Comment Comment Comment, Diffusion Comment Comment Comment Comment StateGraph Comment Comment."
         },
         "2": {
-          "title": "로컬 서버 하드웨어 정밀 튜닝",
-          "desc": "스레드, 컨텍스트 크기, GPU 레이어, FlashAttention, KV캐시 양자화(q8_0/q4_0), RoPE 스케일링 등 12대 하드웨어 제어 옵션을 완전 개방합니다."
+          "title": "Comment Comment Comment Comment Comment",
+          "desc": "Comment, Comment Comment, GPU Comment, FlashAttention, KVComment Comment(q8_0/q4_0), RoPE Comment Comment 12Comment Comment Comment Comment Comment Comment."
         },
         "3": {
-          "title": "SQLite 영속 메모리 및 코사인 벡터 검색",
-          "desc": "ChromaDB나 NumPy 없이 순수 표준 라이브러리만으로 영속 엔티티 저장 및 코사인 유사도 벡터 검색을 지원합니다."
+          "title": "SQLite Comment Comment Comment Comment Comment Comment",
+          "desc": "ChromaDBComment NumPy Comment Comment Comment Comment Comment Comment Comment Comment Comment Comment Comment Comment Comment."
         },
         "4": {
-          "title": "1줄 로컬 REST, SSE 및 실시간 웹 대시보드",
-          "desc": "단 1줄로 REST/SSE 스트리밍 서버 및 무의존성 실시간 웹 대시보드(SSE 채팅, 토폴로지 뷰어, 트레이스 테이블)를 기동합니다."
+          "title": "1Comment Comment REST, SSE Comment Comment Comment Comment",
+          "desc": "Comment 1Comment REST/SSE Comment Comment Comment Comment Comment Comment Comment(SSE Comment, Comment Comment, Comment Comment)Comment Comment."
         },
         "5": {
-          "title": "안드로이드 네이티브 하드웨어 제어",
-          "desc": "배터리 상태, 가속도/조도 센서, GPS 위치, 음성 인식(STT), 음성 합성(TTS), 진동을 에이전트 도구로 직결하며 커널 직접 조회 폴백을 지원합니다."
+          "title": "Comment Comment Comment Comment",
+          "desc": "Comment Comment, Comment/Comment Comment, GPS Comment, Comment Comment(STT), Comment Comment(TTS), Comment Comment Comment Comment Comment Comment Comment Comment Comment."
         }
       }
     }
@@ -1762,7 +1762,7 @@ if (window.i18nManager) {
 
   const SUPPORTED_LANGUAGES = {
     'en': { code: 'en', name: 'English', nativeName: 'English', flag: '🇺🇸' },
-    'ko': { code: 'ko', name: 'Korean', nativeName: '한국어', flag: '🇰🇷' },
+    'ko': { code: 'ko', name: 'Korean', nativeName: 'Comment', flag: '🇰🇷' },
     'ja': { code: 'ja', name: 'Japanese', nativeName: '日本語', flag: '🇯🇵' },
     'zh': { code: 'zh', name: 'Chinese', nativeName: '简体中文', flag: '🇨🇳' },
     'es': { code: 'es', name: 'Spanish', nativeName: 'Español', flag: '🇪🇸' },
@@ -2028,7 +2028,7 @@ if (window.i18nManager) {
   --content-max-width: 980px;
 
   /* Fonts */
-  --font-sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Comment Comment", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
 }
 
@@ -2728,7 +2728,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tabBtn = document.createElement('div');
         tabBtn.id = 'sidebar-toggle-tab';
         tabBtn.className = 'sidebar-toggle-tab';
-        tabBtn.setAttribute('title', '사이드바 접기/펼치기 (Toggle Sidebar)');
+        tabBtn.setAttribute('title', 'Comment Comment/Comment (Toggle Sidebar)');
         tabBtn.setAttribute('aria-label', 'Toggle Sidebar');
         tabBtn.innerHTML = '‹';
         sidebar.appendChild(tabBtn);
@@ -2901,32 +2901,32 @@ document.addEventListener('DOMContentLoaded', () => {
   "platform": "ARM64 / WebGPU / Web Standard",
   "github_repo_url": "https://github.com/uno-km/termux-aichain",
   "tagline_en": "Ultra-Lightweight Zero-Dependency AI Chaining & Autonomous Agent Framework for Android Termux",
-  "tagline_ko": "안드로이드 Termux 환경을 위한 초경량 제로 의존성(Zero-Dependency) AI 체이닝 및 자율 에이전트 프레임워크",
+  "tagline_ko": "Comment Termux Comment Comment Comment Comment Comment(Zero-Dependency) AI Comment Comment Comment Comment Comment",
   "quick_install_cmd": "pip install termux-aichain\n# or:\nnpm install termux-aichain",
   "why_challenge_en": "Heavy agent frameworks (LangChain, LlamaIndex) require hundreds of bloated dependencies, causing package conflicts and OOM crashes on mobile Termux.",
-  "why_challenge_ko": "기존 LangChain 등은 수백 개의 무거운 외부 의존성으로 인해 안드로이드 Termux에서 패키지 충돌과 심각한 메모리 낭비를 유발합니다.",
+  "why_challenge_ko": "Comment LangChain Comment Comment Comment Comment Comment Comment Comment Comment TermuxComment Comment Comment Comment Comment Comment Comment.",
   "description_en": "Provides pure zero-dependency DAG execution, structured prompt chains, and deterministic tool dispatching in <50KB footprint.",
-  "description_ko": "외부 라이브러리 의존성 0개(Zero-Dependency)로 DAG 연산 그래프, 구조화된 프롬프트 체이닝, 온디바이스 로컬 모델 연동을 50KB 미만 초경량 코어로 지원합니다.",
+  "description_ko": "Comment Comment Comment 0Comment(Zero-Dependency)Comment DAG Comment Comment, Comment Comment Comment, Comment Comment Comment Comment 50KB Comment Comment Comment Comment.",
   "code_example_py": "from termux_aichain import Chain, Agent\nagent = Agent(model='termux-bitnet')\nchain = Chain([agent])\nprint(chain.run('Summarize task'))",
   "code_example_js": "import { Chain, Agent } from 'termux-aichain';\nconst agent = new Agent({ model: 'termux-bitnet' });\nconst chain = new Chain([agent]);\nconst res = await chain.run('Summarize task');",
   "features": [
     {
       "title_en": "Deterministic 0-Drift Output",
-      "title_ko": "결정론적 0% 오차 연산",
+      "title_ko": "Comment 0% Comment Comment",
       "desc_en": "Bit-exact floating-point precision verified across heterogeneous ARM64 & WebGPU hardware.",
-      "desc_ko": "이기종 하드웨어 간 비트 단위로 동일한 결정론적 수치 정밀도를 보장합니다."
+      "desc_ko": "Comment Comment Comment Comment Comment Comment Comment Comment Comment Comment."
     },
     {
       "title_en": "Zero Cloud Egress Architecture",
-      "title_ko": "서버 비용 0원 완전 온디바이스",
+      "title_ko": "Comment Comment 0Comment Comment Comment",
       "desc_en": "Operates 100% on the local client without external network telemetry leaks.",
-      "desc_ko": "외부 네트워크 통신 없이 100% 로컬 클라이언트에서 독립 구동됩니다."
+      "desc_ko": "Comment Comment Comment Comment 100% Comment Comment Comment Comment."
     },
     {
       "title_en": "Memory Leakage Protection",
-      "title_ko": "자동 메모리 버퍼 풀링 보호",
+      "title_ko": "Comment Comment Comment Comment Comment",
       "desc_en": "Weakref lifetime management preventing GPU VRAM / system RAM leaks.",
-      "desc_ko": "Weakref 수명 주기 관리로 메모리 누수를 원천 차단합니다."
+      "desc_ko": "Weakref Comment Comment Comment Comment Comment Comment Comment."
     }
   ],
   "matrix_table": [
@@ -3447,7 +3447,7 @@ Sitemap: sitemap.xml
   --content-max-width: 980px;
 
   /* Fonts */
-  --font-sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", "Comment Comment", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", "Fira Code", "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
 }
 
@@ -10273,7 +10273,7 @@ async function main() {
     });
 
     tracer.finish();
-    console.log("\n?뱤 Node.js Execution Profiler Tree:");
+    console.log("\n?Comment Node.js Execution Profiler Tree:");
     console.log(tracer.renderTree());
     console.log("==============================================================================");
     console.log("??Node.js ESM Regression Suite 100% PASS!\n");
@@ -18357,11 +18357,11 @@ def test_normalizer_plain_text_zero_overkill():
     raw = RawModelResponse(
         provider="generic",
         model="qwen",
-        text="??살춳?紐낅？ 獄쏄퀬苑ｇ뵳??遺얠쎗?? ?袁⑹삺 88%??낅빍??"
+        text="??Comment?紐Comment？ 獄Comment苑ｇComment??遺Comment?? ?袁⑹Comment 88%??Comment??"
     )
     norm = OutputNormalizer.normalize(raw, registered_tool_names=["termux_vibrate"])
     assert norm.type == "text"
-    assert norm.content == "??살춳?紐낅？ 獄쏄퀬苑ｇ뵳??遺얠쎗?? ?袁⑹삺 88%??낅빍??"
+    assert norm.content == "??Comment?紐Comment？ 獄Comment苑ｇComment??遺Comment?? ?袁⑹Comment 88%??Comment??"
     assert norm.tool_calls == []
 ````
 
@@ -18424,7 +18424,7 @@ class SequenceModel(BaseChatModel):
         self.idx += 1
         return GenerationResult(content=resp, message=AIMessage(content=resp))
 
-# 1. Bash fence 내부 JSON이 ToolCall로 승격되지 않음 (P0-1 완결 검증)
+# 1. Bash fence Comment JSONComment ToolCallComment Comment Comment (P0-1 Comment Comment)
 def test_json_inside_bash_fence_is_not_promoted():
     raw = RawModelResponse(
         provider="test",
@@ -18441,7 +18441,7 @@ echo '{"tool":"termux_vibrate", "arguments":{"duration_ms":1500}}'
     assert result.tool_calls == []
     assert any("code_block_excluded_from_tool_parsing" in w for w in result.warnings)
 
-# 2. Python fence 내부 JSON도 승격되지 않음
+# 2. Python fence Comment JSONComment Comment Comment
 def test_json_inside_python_fence_not_promoted():
     raw = RawModelResponse(
         provider="test",
@@ -18456,7 +18456,7 @@ payload = {"name": "termux_vibrate", "arguments": {"duration_ms": 1000}}
     assert result.type == "text"
     assert result.tool_calls == []
 
-# 3. ReAct 사용법 예시가 기본 비활성화로 실행되지 않음
+# 3. ReAct Comment Comment Comment Comment Comment Comment
 def test_react_example_not_promoted_by_default():
     raw = RawModelResponse(
         provider="generic",
@@ -18468,7 +18468,7 @@ def test_react_example_not_promoted_by_default():
     assert result.type == "text"
     assert result.tool_calls == []
 
-# 4. 인용된 Action/Input이 실행되지 않음
+# 4. Comment Action/InputComment Comment Comment
 def test_quoted_action_input_not_promoted():
     raw = RawModelResponse(
         provider="generic",
@@ -18479,7 +18479,7 @@ def test_quoted_action_input_not_promoted():
     assert result.type == "text"
     assert result.tool_calls == []
 
-# 5. force="false"가 boolean으로 수용되지 않음 (P0-3 JSON Schema 검증)
+# 5. force="false"Comment booleanComment Comment Comment (P0-3 JSON Schema Comment)
 def test_string_false_rejected_for_boolean():
     schema = {
         "type": "object",
@@ -18493,7 +18493,7 @@ def test_string_false_rejected_for_boolean():
         validate_tool_arguments(schema, {"duration_ms": 500, "force": "false"})
     assert "must be a boolean" in str(exc.value)
 
-# 6. 필수 tool argument 누락 시 실행 전 거부
+# 6. Comment tool argument Comment Comment Comment Comment Comment
 def test_missing_required_tool_arg_rejected():
     schema = {
         "type": "object",
@@ -18506,7 +18506,7 @@ def test_missing_required_tool_arg_rejected():
         validate_tool_arguments(schema, {})
     assert "Missing required argument" in str(exc.value)
 
-# 7. unknown argument 거부
+# 7. unknown argument Comment
 def test_unknown_tool_arg_rejected():
     schema = {
         "type": "object",
@@ -18520,7 +18520,7 @@ def test_unknown_tool_arg_rejected():
         validate_tool_arguments(schema, {"duration_ms": 500, "malicious_payload": "hack"})
     assert "Unknown arguments" in str(exc.value)
 
-# 8. localhost.evil.example 거부 (P0-5 Loopback URL 검사)
+# 8. localhost.evil.example Comment (P0-5 Loopback URL Comment)
 def test_loopback_prefix_bypass_rejected():
     with pytest.raises(ServerConnectionRefusedError):
         validate_loopback_endpoint("http://localhost.evil.example:8080")
@@ -18529,12 +18529,12 @@ def test_loopback_prefix_bypass_rejected():
     with pytest.raises(ServerConnectionRefusedError):
         validate_loopback_endpoint("http://0.0.0.0:8080")
 
-# 9. localhost@evil.example 거부
+# 9. localhost@evil.example Comment
 def test_loopback_userinfo_bypass_rejected():
     with pytest.raises(ServerConnectionRefusedError):
         validate_loopback_endpoint("http://localhost@evil.example:8080")
 
-# 10. invalid health JSON 거부 (P0-6 Fail-Closed Handshake)
+# 10. invalid health JSON Comment (P0-6 Fail-Closed Handshake)
 def test_invalid_health_json_rejected(monkeypatch):
     class FakeResp:
         status = 200
@@ -18548,7 +18548,7 @@ def test_invalid_health_json_rejected(monkeypatch):
         ServerIdentityVerifier.verify("http://127.0.0.1:8080")
     assert "not valid JSON" in str(exc.value)
 
-# 11. empty health JSON 거부
+# 11. empty health JSON Comment
 def test_empty_health_json_rejected(monkeypatch):
     class FakeResp:
         status = 200
@@ -18561,7 +18561,7 @@ def test_empty_health_json_rejected(monkeypatch):
     with pytest.raises(ServerProtocolMismatchError):
         ServerIdentityVerifier.verify("http://127.0.0.1:8080")
 
-# 12. protocolVersion 누락·불일치 거부
+# 12. protocolVersion Comment·Comment Comment
 def test_protocol_version_mismatch_rejected(monkeypatch):
     class FakeResp:
         status = 200
@@ -18575,7 +18575,7 @@ def test_protocol_version_mismatch_rejected(monkeypatch):
         ServerIdentityVerifier.verify("http://127.0.0.1:8080", expected_protocol_version="1.0")
     assert "Protocol version mismatch" in str(exc.value)
 
-# 13. health payload 크기 초과 거부
+# 13. health payload Comment Comment Comment
 def test_health_payload_size_exceeded_rejected(monkeypatch):
     class FakeResp:
         status = 200
@@ -18589,7 +18589,7 @@ def test_health_payload_size_exceeded_rejected(monkeypatch):
         ServerIdentityVerifier.verify("http://127.0.0.1:8080", max_health_bytes=100)
     assert "exceeds maximum allowed size" in str(exc.value)
 
-# 14. managed 기존 서버 model mismatch 거부
+# 14. managed Comment Comment model mismatch Comment
 def test_managed_existing_model_mismatch(monkeypatch):
     class FakeResp:
         status = 200
@@ -18602,7 +18602,7 @@ def test_managed_existing_model_mismatch(monkeypatch):
     with pytest.raises(ModelIdentityMismatchError):
         ServerIdentityVerifier.verify("http://127.0.0.1:8080", expected_model_id="expected-model.gguf")
 
-# 15. stop과 invoke 경쟁에서 신규 요청 거부 (P0-9 상태 경쟁 방어)
+# 15. stopComment invoke Comment Comment Comment Comment (P0-9 Comment Comment Comment)
 def test_stopped_agent_rejects_invoke():
     agent = LocalAgent(
         mode="test",
@@ -18615,12 +18615,12 @@ def test_stopped_agent_rejects_invoke():
         agent.invoke({"messages": [HumanMessage(content="hi")]})
     assert "cannot accept requests" in str(exc.value)
 
-# 16. remote mode가 미집행 정책으로 실행되지 않음 (P0-10 Option A)
+# 16. remote modeComment Comment Comment Comment Comment (P0-10 Option A)
 def test_remote_mode_rc_disabled():
     with pytest.raises(RemoteFallbackNotAuthorizedError):
         LocalAgent.create(mode="remote")
 
-# 17. 빈 embedding 거부 (P1 VectorStore 보완)
+# 17. Comment embedding Comment (P1 VectorStore Comment)
 def test_empty_embedding_rejected():
     vstore = SQLiteVectorStore(db_path=":memory:")
     with pytest.raises(ValueError) as exc:
@@ -18628,7 +18628,7 @@ def test_empty_embedding_rejected():
     assert "must not be empty" in str(exc.value)
     vstore.close()
 
-# 18. k 음수·과대·bool 거부
+# 18. k Comment·Comment·bool Comment
 def test_invalid_k_rejected():
     vstore = SQLiteVectorStore(db_path=":memory:")
     vstore.add_texts(["text"], [[1.0, 0.0]])
@@ -18640,7 +18640,7 @@ def test_invalid_k_rejected():
         vstore.similarity_search_by_vector([1.0, 0.0], k=1000)
     vstore.close()
 
-# 19. 손상된 vector row가 전체 검색을 무너뜨리지 않음
+# 19. Comment vector rowComment Comment Comment Comment Comment
 def test_corrupted_vector_row_skipped():
     vstore = SQLiteVectorStore(db_path=":memory:")
     vstore.add_texts(["valid"], [[1.0, 0.0]])
@@ -18653,12 +18653,12 @@ def test_corrupted_vector_row_skipped():
     assert hits[0].page_content == "valid"
     vstore.close()
 
-# 20. 진동 도구 force 타입 검사 및 범위 검증
+# 20. Comment Comment force Comment Comment Comment Comment Comment
 def test_vibrate_device_force_type_check():
     with pytest.raises(ToolArgumentValidationError):
         vibrate_device(duration_ms=500, force="false")  # string "false" rejected
 
-# 21. 기본 create_react_agent에서 ReAct 문구가 실행되지 않음 (P0-1)
+# 21. Comment create_react_agentComment ReAct Comment Comment Comment (P0-1)
 def test_default_create_react_agent_no_react_text():
     model = StaticModel('Action: termux_vibrate\nAction Input: {"duration_ms": 500}')
     agent = create_react_agent(model=model, tools=[vibrate_device])
@@ -18668,7 +18668,7 @@ def test_default_create_react_agent_no_react_text():
     assert isinstance(last_msg, AIMessage)
     assert not last_msg.tool_calls
 
-# 22. 명시적으로 활성화한 경우에만 ReAct ToolCall 생성
+# 22. Comment Comment Comment ReAct ToolCall Comment
 def test_explicit_create_react_agent_allows_react_text():
     # SequenceModel: 1st returns action, 2nd returns final answer
     model = SequenceModel([
@@ -18683,7 +18683,7 @@ def test_explicit_create_react_agent_allows_react_text():
     res = agent.invoke({"messages": [HumanMessage(content="test")]})
     assert any(m.__class__.__name__ == "ToolMessage" for m in res["messages"])
 
-# 23. duration_ms minimum/maximum Schema 검증 (P0-2)
+# 23. duration_ms minimum/maximum Schema Comment (P0-2)
 def test_duration_ms_min_max_schema_validation():
     schema = {
         "type": "object",
@@ -18700,7 +18700,7 @@ def test_duration_ms_min_max_schema_validation():
         validate_tool_arguments(schema, {"duration_ms": 5000})
     assert "must be <= 2000" in str(exc2.value)
 
-# 24. Health HTTP Redirect 거부 (P1-1)
+# 24. Health HTTP Redirect Comment (P1-1)
 def test_health_redirect_rejected():
     # Test NoRedirectHandler
     handler = NoRedirectHandler()
@@ -18708,7 +18708,7 @@ def test_health_redirect_rejected():
         handler.http_error_302(None, None, 302, "Found", {})
     assert "redirect" in str(exc.value)
 
-# 25. 다른 모델이 같은 포트를 점유하면 spawn하지 않고 CONFLICT 오류 (P0-4)
+# 25. Comment Comment Comment Comment Comment spawnComment Comment CONFLICT Comment (P0-4)
 def test_conflict_server_identity_blocks_spawn(monkeypatch, tmp_path):
     dummy_model = tmp_path / "my_model.gguf"
     dummy_model.write_text("dummy")
@@ -18728,7 +18728,7 @@ def test_conflict_server_identity_blocks_spawn(monkeypatch, tmp_path):
         LocalAgent.create(mode="managed", model_path=str(dummy_model))
     assert "incompatible or conflicting" in str(exc.value)
 
-# 26. STOPPING / STOPPED 상태에서 lease 획득 거부 (P1-3)
+# 26. STOPPING / STOPPED Comment lease Comment Comment (P1-3)
 def test_stopping_state_rejects_lease():
     agent = LocalAgent(mode="test", chat_model=StaticModel(), tools=[])
     agent.close()
@@ -18738,7 +18738,7 @@ def test_stopping_state_rejects_lease():
             pass
     assert "Cannot acquire lease" in str(exc.value)
 
-# 27. Vector search heap 메모리 크기 k 바운딩 검증 (P1-4)
+# 27. Vector search heap Comment Comment k Comment Comment (P1-4)
 def test_vector_search_bounded_heap():
     vstore = SQLiteVectorStore(db_path=":memory:")
     # Add 50 items
@@ -18750,7 +18750,7 @@ def test_vector_search_bounded_heap():
     assert len(results) == 3
     vstore.close()
 
-# 28. status:ok 미식별 서버는 openai-compatible로 분류되며 llama-server로 오인하지 않음 (P0-3)
+# 28. status:ok Comment Comment openai-compatibleComment Comment llama-serverComment Comment Comment (P0-3)
 def test_unknown_server_status_ok_is_openai_compatible_not_llama(monkeypatch):
     class FakeGenericResp:
         status = 200
@@ -18763,12 +18763,12 @@ def test_unknown_server_status_ok_is_openai_compatible_not_llama(monkeypatch):
     payload = ServerIdentityVerifier.verify("http://127.0.0.1:8080")
     assert payload["service"] == "openai-compatible"
 
-    # expected_service="llama-server" 지정 시 /v1/models 에 유효 모델 목록이 없으면 거부
+    # expected_service="llama-server" Comment Comment /v1/models Comment Comment Comment Comment Comment Comment
     with pytest.raises(ServerProtocolMismatchError) as exc:
         ServerIdentityVerifier.verify("http://127.0.0.1:8080", expected_service="llama-server")
     assert any(k in str(exc.value) for k in ["capability", "Service mismatch", "Mandatory"])
 
-# 29. expected_model_id 지정 + 서버 model ID 누락 시 fail-closed (P0-2)
+# 29. expected_model_id Comment + Comment model ID Comment Comment fail-closed (P0-2)
 def test_expected_model_id_missing_fails_closed(monkeypatch):
     class FakeNoModelResp:
         status = 200
@@ -18782,7 +18782,7 @@ def test_expected_model_id_missing_fails_closed(monkeypatch):
         ServerIdentityVerifier.verify("http://127.0.0.1:8080", expected_model_id="qwen-2.5-1.5b")
     assert "Expected model ID was configured, but the server did not provide model identity" in str(exc.value)
 
-# 30. expected_model_sha256 지정 + 서버 checksum 누락 시 fail-closed (P0-2)
+# 30. expected_model_sha256 Comment + Comment checksum Comment Comment fail-closed (P0-2)
 def test_expected_model_sha256_missing_fails_closed(monkeypatch):
     class FakeNoChecksumResp:
         status = 200
@@ -18796,7 +18796,7 @@ def test_expected_model_sha256_missing_fails_closed(monkeypatch):
         ServerIdentityVerifier.verify("http://127.0.0.1:8080", expected_model_sha256="abcdef123456")
     assert "Expected model SHA-256 was configured, but the server did not provide a checksum" in str(exc.value)
 
-# 31. managed OWNED 생성 성공 및 status.runtime_ownership == OWNED (P0-1)
+# 31. managed OWNED Comment Comment Comment status.runtime_ownership == OWNED (P0-1)
 def test_managed_owned_lifecycle_and_status(monkeypatch, tmp_path):
     model_file = tmp_path / "qwen2.5.gguf"
     model_file.write_text("model_data")
@@ -18827,7 +18827,7 @@ def test_managed_owned_lifecycle_and_status(monkeypatch, tmp_path):
     finally:
         agent.close()
 
-# 32. managed ATTACHED 생성 성공 및 close 시 외부 자원 보존 (P0-1)
+# 32. managed ATTACHED Comment Comment Comment close Comment Comment Comment Comment (P0-1)
 def test_managed_attached_lifecycle_preserves_external(monkeypatch, tmp_path):
     lock_file = tmp_path / "server.lock"
     lock_file.write_text(json.dumps({"pid": 8888, "endpoint": "http://127.0.0.1:8080", "created_at": time.time()}))
@@ -18847,7 +18847,7 @@ def test_managed_attached_lifecycle_preserves_external(monkeypatch, tmp_path):
     # Lock file must remain preserved since agent was attached, not owned
     assert lock_file.exists()
 
-# 33. BoundedRingLog 단일 초대형 로그 행(100KB) 상한 및 바이트 보장 (P0-2)
+# 33. BoundedRingLog Comment Comment Comment Comment(100KB) Comment Comment Comment Comment (P0-2)
 def test_ring_log_single_oversized_line_is_bounded():
     from termux_aichain.core.providers.local_server import BoundedRingLog
     log = BoundedRingLog(maxlen=200, max_bytes=65536)
@@ -18856,7 +18856,7 @@ def test_ring_log_single_oversized_line_is_bounded():
     total_bytes = sum(len(line.encode("utf-8")) for line in log.lines)
     assert total_bytes <= 65536
 
-# 34. managed 시작 실패 시 UnboundLocalError 없이 원본 예외 보존 (P0-3)
+# 34. managed Comment Comment Comment UnboundLocalError Comment Comment Comment Comment (P0-3)
 def test_managed_start_failure_preserves_original_error(monkeypatch, tmp_path):
     model = tmp_path / "model.gguf"
     model.write_bytes(b"model-data")
@@ -18875,7 +18875,7 @@ def test_managed_start_failure_preserves_original_error(monkeypatch, tmp_path):
             model_path=str(model)
         )
 
-# 35. CORS scheme 및 userinfo 엄격 거부 (P1-3)
+# 35. CORS scheme Comment userinfo Comment Comment (P1-3)
 def test_cors_scheme_and_userinfo_rejected():
     from termux_aichain.serve.server import is_allowed_loopback_origin
     assert is_allowed_loopback_origin("http://localhost:3000") is True
