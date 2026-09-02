@@ -26,8 +26,10 @@ from termux_aichain import (
     HumanMessage
 )
 
-LLAMA_SERVER_BIN = "/data/data/com.termux/files/home/.shitty_phone_ai/llama.cpp/build/bin/llama-server"
-LLAMA_MODEL_PATH = "/data/data/com.termux/files/home/.shitty_phone_ai/models/Llama-3.2-3B-Instruct-Q4_K_M.gguf"
+from pathlib import Path
+
+LLAMA_SERVER_BIN = os.environ.get("TERMUX_LLAMA_BIN", str(Path.home() / ".termux-llama" / "bin" / "llama-server"))
+LLAMA_MODEL_PATH = os.environ.get("TERMUX_LLAMA_MODEL", str(Path.home() / ".termux-llama" / "models" / "Llama-3.2-3B-Instruct-Q4_K_M.gguf"))
 PORT = 8088
 
 def wait_for_server(port: int, max_wait: float = 20.0) -> bool:

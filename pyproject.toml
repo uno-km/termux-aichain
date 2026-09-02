@@ -25,7 +25,9 @@ classifiers = [
 ]
 keywords = ["termux", "android", "edge-ai", "langchain", "llama-cpp", "bitnet", "agent", "zero-dependency"]
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "ameva-vulkan-runtime>=1.0.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/uno-km/termux-aichain"
