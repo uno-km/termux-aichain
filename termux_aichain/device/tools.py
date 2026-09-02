@@ -172,16 +172,19 @@ def _ensure_termux_api_service_alive() -> None:
     """Wakes up Termux:API background service on modern Android (14/15/16) to prevent intent dropping."""
     if shutil.which("am"):
         try:
-            subprocess.run(
+            res = subprocess.run(
                 ["am", "startservice", "--user", "0", "-n", "com.termux.api/.TermuxApiService"],
                 capture_output=True,
+                text=True,
                 timeout=1.0,
                 check=False
             )
+            if res.returncode != 0:
+                logger.debug("TermuxApiService startservice returned non-zero code %d: %s", res.returncode, res.stderr.strip() if res.stderr else "")
         except subprocess.TimeoutExpired:
-            logger.debug("TermuxApiService wake-up timed out after 1.0s")
+            logger.warning("TermuxApiService wake-up timed out after 1.0s")
         except Exception as exc:
-            logger.debug("TermuxApiService wake-up attempt ignored: %s", exc)
+            logger.warning("TermuxApiService wake-up attempt failed: %s", exc)
 
 @tool(
     name="termux_vibrate",
