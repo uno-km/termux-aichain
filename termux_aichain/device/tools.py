@@ -9,21 +9,36 @@ Zero external heavy dependencies - Pure Python 3.10+ standard library.
 """
 
 from __future__ import annotations
-import os
 import json
+import logging
+import os
 import shutil
 import subprocess
 from typing import Any, Dict, List, Optional
 from termux_aichain.graph.agent import Tool, tool
 from termux_aichain.core.agent_types import ToolArgumentValidationError
 
+logger = logging.getLogger("termux_aichain.device.tools")
+
 def _run_cmd(args: List[str], timeout: float = 3.0) -> Optional[str]:
     try:
         res = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
         if res.returncode == 0 and res.stdout.strip():
             return res.stdout.strip()
+        if res.returncode != 0:
+            logger.debug("Command %s exited with non-zero code %d: %s", args, res.returncode, res.stderr.strip() if res.stderr else "")
         return None
-    except Exception:
+    except subprocess.TimeoutExpired as exc:
+        logger.warning("Command %s timed out after %.1f seconds: %s", args, timeout, exc)
+        return None
+    except FileNotFoundError as exc:
+        logger.debug("Command binary %s not found on host: %s", args[0] if args else "unknown", exc)
+        return None
+    except PermissionError as exc:
+        logger.warning("Permission denied executing command %s: %s", args, exc)
+        return None
+    except Exception as exc:
+        logger.error("Unexpected error executing %s: %s", args, exc, exc_info=True)
         return None
 
 @tool(
@@ -40,8 +55,8 @@ def get_battery_status() -> str:
             try:
                 json.loads(res)
                 return res
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("termux-battery-status output JSON parse error: %s", exc)
 
     # 2. Sysfs fallback for Android Linux Kernel (/sys/class/power_supply)
     cap_path = "/sys/class/power_supply/battery/capacity"
@@ -49,15 +64,15 @@ def get_battery_status() -> str:
     temp_path = "/sys/class/power_supply/battery/temp"
     if os.path.exists(cap_path):
         try:
-            with open(cap_path, "r") as f:
+            with open(cap_path, "r", encoding="utf-8", errors="ignore") as f:
                 cap = int(f.read().strip())
             stat = "Discharging"
             if os.path.exists(stat_path):
-                with open(stat_path, "r") as f:
+                with open(stat_path, "r", encoding="utf-8", errors="ignore") as f:
                     stat = f.read().strip()
             temp = None
             if os.path.exists(temp_path):
-                with open(temp_path, "r") as f:
+                with open(temp_path, "r", encoding="utf-8", errors="ignore") as f:
                     temp = float(f.read().strip()) / 10.0
             return json.dumps({
                 "percentage": cap,
@@ -65,8 +80,8 @@ def get_battery_status() -> str:
                 "temperature": temp,
                 "source": "kernel_sysfs"
             })
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("Kernel sysfs battery read failed: %s", exc)
 
     # 3. Android dumpsys fallback
     dumpsys_res = _run_cmd(["dumpsys", "battery"], timeout=1.5)
@@ -78,8 +93,8 @@ def get_battery_status() -> str:
             if line_str.startswith("level:"):
                 try:
                     level = int(line_str.split(":")[1].strip())
-                except Exception:
-                    pass
+                except Exception as exc:
+                    logger.debug("dumpsys battery level parse failed: %s", exc)
             elif line_str.startswith("status:"):
                 status = line_str.split(":")[1].strip()
         if level is not None:
@@ -163,8 +178,10 @@ def _ensure_termux_api_service_alive() -> None:
                 timeout=1.0,
                 check=False
             )
-        except Exception:
-            pass
+        except subprocess.TimeoutExpired:
+            logger.debug("TermuxApiService wake-up timed out after 1.0s")
+        except Exception as exc:
+            logger.debug("TermuxApiService wake-up attempt ignored: %s", exc)
 
 @tool(
     name="termux_vibrate",
@@ -197,14 +214,17 @@ def vibrate_device(duration_ms: int = 500, force: bool = False) -> str:
             res = subprocess.run(cmd, capture_output=True, text=True, timeout=5.0)
             if res.returncode == 0:
                 return json.dumps({"status": "SUCCESS", "message": f"Vibrated device for {duration_ms} ms (force={force})."})
+            logger.warning("termux-vibrate failed with return code %d: %s", res.returncode, res.stderr.strip() if res.stderr else "")
             return json.dumps({
                 "error": "VIBRATION_FAILED",
                 "code": res.returncode,
                 "retryable": False
             })
-        except Exception:
+        except Exception as exc:
+            logger.error("Vibration execution exception: %s", exc, exc_info=True)
             return json.dumps({
                 "error": "VIBRATION_EXECUTION_ERROR",
+                "message": str(exc),
                 "retryable": False
             })
 
