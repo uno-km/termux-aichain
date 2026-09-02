@@ -179,6 +179,198 @@ def browse_web_headless(url: str, query: str = "") -> str:
             "message": str(err)
         })
 
+@tool(
+    name="termux_tts_synth",
+    description="Synthesizes text into high-quality WAV audio file using on-device DSP or ONNX neural vocoder.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "text": {"type": "string", "description": "Input text to synthesize into speech"},
+            "output_path": {"type": "string", "description": "Target audio WAV output file path (default: /tmp/output.wav)"},
+            "lang": {"type": "string", "description": "Language code: 'ko' (Korean) or 'en' (English) (default: ko)"},
+            "speed": {"type": "number", "description": "Speech speed multiplier between 0.5 and 2.0 (default: 1.0)"},
+            "engine": {"type": "string", "description": "Synthesis engine: 'auto', 'dsp', or 'onnx' (default: auto)"}
+        },
+        "required": ["text"]
+    }
+)
+def synthesize_speech(
+    text: str,
+    output_path: str = "/tmp/output.wav",
+    lang: str = "ko",
+    speed: float = 1.0,
+    engine: str = "auto"
+) -> str:
+    """Invokes termux-tts synth CLI or returns explicit error status."""
+    tts_bin = shutil.which("termux-tts")
+    if not tts_bin:
+        return json.dumps({
+            "error": "TERMUX_TTS_NOT_FOUND",
+            "message": "termux-tts CLI is not installed in PATH. Install via 'pip install termux-tts' or 'termux-aichain install tts'."
+        })
+
+    cmd = [
+        tts_bin, "synth",
+        "-t", text,
+        "-o", output_path,
+        "-l", lang,
+        "-s", str(float(speed)),
+        "-e", engine
+    ]
+    try:
+        return _safe_exec(cmd, timeout=45.0)
+    except SubprocessExecutionError as err:
+        return json.dumps({
+            "error": "TTS_SYNTHESIS_FAILED",
+            "command": " ".join(err.cmd),
+            "returncode": err.returncode,
+            "stderr": err.stderr,
+            "message": str(err)
+        })
+
+@tool(
+    name="termux_tts_speak",
+    description="Speaks text aloud directly through Android native speaker output.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "text": {"type": "string", "description": "Input text to speak aloud"},
+            "lang": {"type": "string", "description": "Language code (e.g. 'ko', 'en') (default: ko)"},
+            "stream": {"type": "string", "description": "Audio stream: 'MUSIC', 'NOTIFICATION', or 'ALARM' (default: MUSIC)"}
+        },
+        "required": ["text"]
+    }
+)
+def speak_text(text: str, lang: str = "ko", stream: str = "MUSIC") -> str:
+    """Invokes termux-tts speak CLI or returns explicit error status."""
+    tts_bin = shutil.which("termux-tts")
+    if not tts_bin:
+        return json.dumps({
+            "error": "TERMUX_TTS_NOT_FOUND",
+            "message": "termux-tts CLI is not installed in PATH. Install via 'pip install termux-tts' or 'termux-aichain install tts'."
+        })
+
+    cmd = [tts_bin, "speak", "-t", text, "-l", lang, "-s", stream]
+    try:
+        return _safe_exec(cmd, timeout=30.0)
+    except SubprocessExecutionError as err:
+        return json.dumps({
+            "error": "TTS_SPEAK_FAILED",
+            "command": " ".join(err.cmd),
+            "returncode": err.returncode,
+            "stderr": err.stderr,
+            "message": str(err)
+        })
+
+@tool(
+    name="termux_vision_vlm",
+    description="Analyzes and describes an image or answers questions about an image using on-device Vision-Language Model (VLM).",
+    parameters={
+        "type": "object",
+        "properties": {
+            "image_path": {"type": "string", "description": "Target image file path (PNG/JPEG)"},
+            "prompt": {"type": "string", "description": "Text query or prompt asking about the image (default: 'Describe this image in detail.')"},
+            "model": {"type": "string", "description": "Optional model ID (e.g., 'smolvlm-500m-q4') or custom .gguf path"}
+        },
+        "required": ["image_path"]
+    }
+)
+def analyze_image_vlm(image_path: str, prompt: str = "Describe this image in detail.", model: Optional[str] = None) -> str:
+    """Invokes termux-vision vlm CLI or returns explicit error status."""
+    vision_bin = shutil.which("termux-vision")
+    if not vision_bin:
+        return json.dumps({
+            "error": "TERMUX_VISION_NOT_FOUND",
+            "message": "termux-vision CLI is not installed in PATH. Install via 'pip install termux-vision' or 'termux-aichain install vision'."
+        })
+
+    cmd = [vision_bin, "vlm", image_path, "-p", prompt]
+    if model:
+        cmd.extend(["-m", model])
+    try:
+        return _safe_exec(cmd, timeout=60.0)
+    except SubprocessExecutionError as err:
+        return json.dumps({
+            "error": "VISION_VLM_FAILED",
+            "command": " ".join(err.cmd),
+            "returncode": err.returncode,
+            "stderr": err.stderr,
+            "message": str(err)
+        })
+
+@tool(
+    name="termux_vision_detect_face",
+    description="Detects faces in an image using on-device Haar cascade detector and extracts the cropped face.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "image_path": {"type": "string", "description": "Target input image file path"},
+            "output_path": {"type": "string", "description": "Target output file path for cropped face (default: /tmp/face_crop.jpg)"}
+        },
+        "required": ["image_path"]
+    }
+)
+def detect_faces(image_path: str, output_path: str = "/tmp/face_crop.jpg") -> str:
+    """Invokes termux-vision detect-face CLI or returns explicit error status."""
+    vision_bin = shutil.which("termux-vision")
+    if not vision_bin:
+        return json.dumps({
+            "error": "TERMUX_VISION_NOT_FOUND",
+            "message": "termux-vision CLI is not installed in PATH. Install via 'pip install termux-vision' or 'termux-aichain install vision'."
+        })
+
+    cmd = [vision_bin, "detect-face", image_path, "-o", output_path]
+    try:
+        return _safe_exec(cmd, timeout=30.0)
+    except SubprocessExecutionError as err:
+        return json.dumps({
+            "error": "VISION_FACE_DETECT_FAILED",
+            "command": " ".join(err.cmd),
+            "returncode": err.returncode,
+            "stderr": err.stderr,
+            "message": str(err)
+        })
+
+@tool(
+    name="termux_vision_canny",
+    description="Applies on-device 5-stage Canny Edge Detection to an image.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "image_path": {"type": "string", "description": "Target input image file path"},
+            "output_path": {"type": "string", "description": "Target output file path for edge image (default: /tmp/edges.png)"},
+            "low": {"type": "number", "description": "Low hysteresis threshold (default: 40.0)"},
+            "high": {"type": "number", "description": "High hysteresis threshold (default: 120.0)"}
+        },
+        "required": ["image_path"]
+    }
+)
+def detect_edges_canny(
+    image_path: str,
+    output_path: str = "/tmp/edges.png",
+    low: float = 40.0,
+    high: float = 120.0
+) -> str:
+    """Invokes termux-vision canny CLI or returns explicit error status."""
+    vision_bin = shutil.which("termux-vision")
+    if not vision_bin:
+        return json.dumps({
+            "error": "TERMUX_VISION_NOT_FOUND",
+            "message": "termux-vision CLI is not installed in PATH. Install via 'pip install termux-vision' or 'termux-aichain install vision'."
+        })
+
+    cmd = [vision_bin, "canny", image_path, "-o", output_path, "--low", str(float(low)), "--high", str(float(high))]
+    try:
+        return _safe_exec(cmd, timeout=30.0)
+    except SubprocessExecutionError as err:
+        return json.dumps({
+            "error": "VISION_CANNY_FAILED",
+            "command": " ".join(err.cmd),
+            "returncode": err.returncode,
+            "stderr": err.stderr,
+            "message": str(err)
+        })
+
 def get_ecosystem_tools() -> List[Tool]:
     """Returns the suite of uno-km edge ecosystem tools."""
     return [
@@ -186,4 +378,9 @@ def get_ecosystem_tools() -> List[Tool]:
         transcribe_speech,
         generate_diffusion_image,
         browse_web_headless,
+        synthesize_speech,
+        speak_text,
+        analyze_image_vlm,
+        detect_faces,
+        detect_edges_canny,
     ]

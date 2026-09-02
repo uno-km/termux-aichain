@@ -24,3 +24,4 @@ export * from "./memory/sqlite.js";
 export * from "./serve/server.js";
 export * from "./trace/tracer.js";
 export * from "./device/tools.js";
+export * from "./device/ecosystem.js";

@@ -1,4 +1,4 @@
-﻿"""
+"""
 ==============================================================================
 termux-aichain Core Structured Output Parsers
 ==============================================================================
@@ -65,13 +65,13 @@ class JsonOutputParser(BaseOutputParser):
             try:
                 return json.loads(target_str)
             except json.JSONDecodeError:
-                pass
+                pass  # Allowed: next strategy follows. Final failure re-raises at L99.
 
         # 2. Try direct full-text JSON load
         try:
             return json.loads(cleaned)
         except json.JSONDecodeError:
-            pass
+            pass  # Allowed: next strategy follows.
 
         # 3. Try to locate outermost {...} or [...]
         start_obj = cleaned.find("{")
@@ -84,19 +84,21 @@ class JsonOutputParser(BaseOutputParser):
             try:
                 return json.loads(candidate)
             except json.JSONDecodeError:
-                pass
+                pass  # Allowed: next strategy follows.
 
         if start_arr != -1 and end_arr != -1 and end_arr > start_arr:
             candidate = cleaned[start_arr:end_arr + 1]
             try:
                 return json.loads(candidate)
             except json.JSONDecodeError:
-                pass
+                pass  # Allowed: final strategy. ValueError raised below if all fail.
 
         if self.default_factory is not None:
             return self.default_factory() if callable(self.default_factory) else self.default_factory
 
         raise ValueError(f"Failed to parse JSON from generation output:\n{text}")
+
+
 
     def __repr__(self) -> str:
         return "JsonOutputParser()"

@@ -33,7 +33,10 @@
     "zero-dependency",
     "state-graph",
     "react-agent",
-    "multimodal"
+    "multimodal",
+    "tts",
+    "vision",
+    "vlm"
   ],
   "author": "UnoKim <uno-km@users.noreply.github.com>",
   "license": "Apache-2.0",

@@ -153,3 +153,24 @@ def test_cmd_run_newly_started_server_is_identity_verified(monkeypatch, tmp_path
     assert "Server startup/verification failed" in out
     assert "Model ID mismatch" in out
     assert stopped_called is True
+
+def test_cmd_info_includes_tts_and_vision(capsys):
+    from termux_aichain.cli import cmd_info
+    cmd_info()
+    out = capsys.readouterr().out
+    assert "termux-tts" in out
+    assert "termux-vision" in out
+
+def test_cmd_setup_includes_tts_and_vision(capsys, monkeypatch):
+    from termux_aichain.cli import cmd_setup
+    cmd_setup()
+    out = capsys.readouterr().out
+    assert "termux-tts" in out
+    assert "termux-vision" in out
+
+def test_cmd_install_target_options(capsys, monkeypatch):
+    from termux_aichain.cli import cmd_install, ECOSYSTEM_MODULES
+    assert "tts" in ECOSYSTEM_MODULES
+    assert "vision" in ECOSYSTEM_MODULES
+    assert ECOSYSTEM_MODULES["tts"]["pypi"] == "termux-tts"
+    assert ECOSYSTEM_MODULES["vision"]["pypi"] == "termux-vision"

@@ -53,6 +53,8 @@
 | :--- | :--- | :--- | :---: |
 | ⚡ **[termux-aichain](https://github.com/uno-km/termux-aichain)** | [![PyPI](https://img.shields.io/pypi/v/termux-aichain?color=blue&style=flat-square)](https://pypi.org/project/termux-aichain/) [![npm](https://img.shields.io/npm/v/termux-aichain?color=red&style=flat-square)](https://www.npmjs.com/package/termux-aichain) | **Zero-Dependency Multimodal Agent Chaining & StateGraph Engine** (Python stdlib + Node.js ESM) | **[Docs](https://uno-km.vercel.app/lib/aichain/)** |
 | 🎙️ **[termux-stt](https://github.com/uno-km/termux-stt)** | [![PyPI](https://img.shields.io/pypi/v/termux-stt?color=blue&style=flat-square)](https://pypi.org/project/termux-stt/) [![npm](https://img.shields.io/npm/v/termux-stt?color=red&style=flat-square)](https://www.npmjs.com/package/termux-stt) | **Integrated On-Device STT & Pure Python 128d X-Vector Diarization** (Whisper + Vosk + Sherpa) | **[Docs](https://uno-km.vercel.app/lib/stt/)** |
+| 🔊 **[termux-tts](https://github.com/uno-km/termux-tts)** | [![PyPI](https://img.shields.io/pypi/v/termux-tts?color=blue&style=flat-square)](https://pypi.org/project/termux-tts/) [![npm](https://img.shields.io/npm/v/termux-tts?color=red&style=flat-square)](https://www.npmjs.com/package/termux-tts) | **High-Performance Multi-Backend TTS Engine** (DSP Formant Vocoder, ONNX Neural Runtime & Native Voice) | **[Docs](https://uno-km.vercel.app/lib/tts/)** |
+| 👁️ **[termux-vision](https://github.com/uno-km/termux-vision)** | [![PyPI](https://img.shields.io/pypi/v/termux-vision?color=blue&style=flat-square)](https://pypi.org/project/termux-vision/) [![npm](https://img.shields.io/npm/v/termux-vision?color=red&style=flat-square)](https://www.npmjs.com/package/termux-vision) | **On-Device Computer Vision & Vision-Language Model (VLM)** (Fast CV, Haar Detect & SmolVLM / Qwen2-VL) | **[Docs](https://uno-km.vercel.app/lib/vision/)** |
 | 🎨 **[termux-diffusion](https://github.com/uno-km/termux-diffusion)** | [![PyPI](https://img.shields.io/pypi/v/termux-diffusion?color=blue&style=flat-square)](https://pypi.org/project/termux-diffusion/) [![npm](https://img.shields.io/npm/v/termux-diffusion?color=red&style=flat-square)](https://www.npmjs.com/package/termux-diffusion) | **Mobile On-Device Stable Diffusion Image Generation** (bfloat16 ARM NEON acceleration) | **[Docs](https://uno-km.vercel.app/lib/diffusion/)** |
 | 🌐 **[termux-playwright](https://github.com/uno-km/termux-playwright)** | [![PyPI](https://img.shields.io/pypi/v/termux-playwright?color=blue&style=flat-square)](https://pypi.org/project/termux-playwright/) [![npm](https://img.shields.io/npm/v/termux-playwright?color=red&style=flat-square)](https://www.npmjs.com/package/termux-playwright) | **Non-Root Native Headless Chromium Browser Automation & Scraping** | **[Docs](https://uno-km.vercel.app/lib/playwright/)** |
 | 🧠 **[termux-train](https://github.com/uno-km/termux-train)** | [![PyPI](https://img.shields.io/pypi/v/termux-train.svg?color=blue&style=flat-square)](https://pypi.org/project/termux-train/) | **Mobile Native Autograd Neural Network Training & LoRA Fine-Tuning** | **[Docs](https://uno-km.vercel.app/lib/train/)** |
@@ -232,7 +234,7 @@ serve(agent, host="127.0.0.1", port=8000)
 
 ---
 
-### [Python] Recipe 5: Full Multimodal Ecosystem Pipeline (STT + Diffusion + Playwright)
+### [Python] Recipe 5: Full Multimodal Ecosystem Pipeline (STT + Vision + TTS + Diffusion + Playwright)
 
 ```python
 from termux_aichain import (
@@ -241,6 +243,9 @@ from termux_aichain import (
     HumanMessage,
     get_battery_status,
     transcribe_speech,
+    synthesize_speech,
+    analyze_image_vlm,
+    detect_faces,
     generate_diffusion_image,
     browse_web_headless,
     vibrate_device
@@ -253,15 +258,18 @@ agent = create_react_agent(
     tools=[
         get_battery_status,
         transcribe_speech,
+        synthesize_speech,
+        analyze_image_vlm,
+        detect_faces,
         generate_diffusion_image,
         browse_web_headless,
         vibrate_device
     ],
-    system_prompt="You are a multimodal autonomous edge agent capable of speech, image, web scraping, and device control."
+    system_prompt="You are a multimodal autonomous edge agent capable of speech, vision, image generation, web scraping, and device control."
 )
 
 state = agent.invoke({
-    "messages": [HumanMessage(content="Transcribe speech from meeting.wav, search local weather, generate an emblem image, and vibrate.")]
+    "messages": [HumanMessage(content="Transcribe speech from meeting.wav, describe chart.png via VLM, synthesize report to voice.wav, and vibrate.")]
 })
 print("Multimodal Result:", state["messages"][-1].content)
 ```

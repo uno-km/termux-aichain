@@ -32,8 +32,12 @@ def is_allowed_loopback_origin(origin: str) -> bool:
         if parsed.query or parsed.fragment:
             return False
         return parsed.hostname in {"localhost", "127.0.0.1", "::1"}
-    except Exception:
+    except ValueError:
+        # urllib.parse.urlsplit이 기형 URL에서 ValueError를 발생 — fail-closed (False 반환).
+        # 이 경로는 CORS 허용을 절대 반환하지 않으므로 안전. 예상 밖 예외는 재발생.
         return False
+
+
 
 class _AgentRequestHandler(BaseHTTPRequestHandler):
     server: AgentServer  # type: ignore

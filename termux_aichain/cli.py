@@ -68,6 +68,16 @@ ECOSYSTEM_MODULES = {
         "pypi": "termux-train",
         "post_install": [],
         "desc": "On-device Autograd neural network training & LoRA"
+    },
+    "tts": {
+        "pypi": "termux-tts",
+        "post_install": ["termux-tts", "doctor"],
+        "desc": "On-device Neural & Native Text-to-Speech Engine"
+    },
+    "vision": {
+        "pypi": "termux-vision",
+        "post_install": ["termux-vision", "doctor"],
+        "desc": "On-device Computer Vision & VLM Multimodal Engine"
     }
 }
 
@@ -184,7 +194,7 @@ def cmd_info() -> None:
     print("- Architecture    : Sovereign Zero-Heavy-Dependency Edge Framework")
     print("- Subsystems      : core, graph, memory, providers, serve, trace, device")
     print("- Native Tools    : battery, sensor, gps, vibrate, notification, tts, shell")
-    print("- Ecosystem Hooks : termux-bitnet, termux-stt, termux-diffusion, termux-playwright, termux-train")
+    print("- Ecosystem Hooks : termux-bitnet, termux-stt, termux-diffusion, termux-playwright, termux-train, termux-tts, termux-vision")
     print("- Model Registry  : " + ", ".join(MODELS_REGISTRY.keys()))
     print("- Documentation   : https://uno-km.vercel.app/lib/aichain/")
     print("=" * 75)
@@ -249,9 +259,15 @@ def download_verified_model(model_name: str, force: bool = False) -> str:
         if os.path.exists(tmp_file):
             try:
                 os.unlink(tmp_file)
-            except Exception:
-                pass
+            except (PermissionError, OSError) as _cleanup_err:
+                # 임시 파일 삭제 실패 — 디스크에 오염 파일이 남을 수 있음. 경고 필수.
+                import sys as _sys
+                print(
+                    f"[WARN] Failed to remove temp file {tmp_file}: {_cleanup_err}",
+                    file=_sys.stderr,
+                )
         raise
+
 
 def cmd_pull(model_name: str) -> None:
     """Downloads verified lightweight model GGUF with streaming SHA-256 verification."""
@@ -297,6 +313,7 @@ def cmd_status(verbose: bool = False) -> None:
 
 def quarantine_lock(lock_file: Path, reason: str = "unverifiable") -> Path:
     """Safely isolates an unverifiable or malformed lock file without data loss."""
+    import sys as _sys
     quarantine_dir = lock_file.parent / "quarantine"
     quarantine_dir.mkdir(parents=True, exist_ok=True)
     suffix = f"{time.time_ns()}-{os.getpid()}"
@@ -304,9 +321,16 @@ def quarantine_lock(lock_file: Path, reason: str = "unverifiable") -> Path:
     try:
         shutil.move(str(lock_file), str(dest))
         (quarantine_dir / f"{lock_file.name}.{suffix}.reason.txt").write_text(reason, encoding="utf-8")
-    except Exception:
-        pass
+    except (PermissionError, OSError) as _quarantine_err:
+        # 격리 이동 실패 — 원본 파일이 남아 있을 수 있음. 보안 경고.
+        print(
+            f"[WARN] quarantine_lock: Failed to quarantine {lock_file}: {_quarantine_err}",
+            file=_sys.stderr,
+        )
+    # MemoryError 등 예상 밖 예외는 재발생
     return dest
+
+
 
 def cmd_stop() -> None:
     """Safely stops locally running model server daemon with strict PID ownership verification."""
@@ -322,13 +346,20 @@ def cmd_stop() -> None:
                 pid = data.get("pid")
                 if pid and isinstance(pid, int):
                     if verify_managed_process_ownership(pid, data):
-                        import signal
+                        import signal, sys as _sys
                         try:
                             os.kill(pid, signal.SIGTERM)
                             stopped = True
-                        except OSError:
-                            pass
+                        except ProcessLookupError:
+                            # 프로세스가 이미 종료됨 — 잠금 파일만 남은 것
+                            stopped = True  # cleanup은 진행
+                        except PermissionError as _perm_err:
+                            print(
+                                f"[ERROR] Permission denied sending SIGTERM to pid {pid}: {_perm_err}",
+                                file=_sys.stderr,
+                            )
                         lock_file.unlink(missing_ok=True)
+
                     else:
                         # Fail-closed: Quarantine mismatched lock to preserve state & prevent confusion
                         quarantine_lock(lock_file, reason="ownership_verification_failed")
@@ -506,8 +537,8 @@ def main() -> None:
 
     # install (One-Touch auto-provisioning)
     inst_parser = subparsers.add_parser("install", help="One-touch auto-provisioning of Termux dependencies & ecosystem")
-    inst_parser.add_argument("target", nargs="?", default="core", choices=["core", "all", "ecosystem", "bitnet", "stt", "diffusion", "playwright", "train"], help="Target module to install (default: core)")
-    inst_parser.add_argument("--all", action="store_true", help="Install complete multimodal ecosystem (bitnet, stt, diffusion, playwright, train)")
+    inst_parser.add_argument("target", nargs="?", default="core", choices=["core", "all", "ecosystem", "bitnet", "stt", "diffusion", "playwright", "train", "tts", "vision"], help="Target module to install (default: core)")
+    inst_parser.add_argument("--all", action="store_true", help="Install complete multimodal ecosystem (bitnet, stt, diffusion, playwright, train, tts, vision)")
 
     # setup
     subparsers.add_parser("setup", help="Diagnose environment and check native tools")

@@ -43,11 +43,20 @@ class SQLiteEntityMemory:
             os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
         self.conn = sqlite3.connect(self.db_path)
         if self.db_path != ":memory:":
+            import logging as _logging
+            _sqlite_logger = _logging.getLogger("termux_aichain.memory.sqlite")
             try:
                 self.conn.execute("PRAGMA journal_mode = WAL;")
                 self.conn.execute("PRAGMA synchronous = NORMAL;")
-            except Exception:
-                pass
+                self.conn.execute("PRAGMA busy_timeout = 5000;")
+            except sqlite3.OperationalError as _pragma_err:
+                # WAL/NORMAL 설정 실패 — 읽기전용 FS 등. DB 작동은 계속되나 성능 최적화 비활성.
+                # 성능 degraded 상태를 경고로 기록. 오류를 성공으로 변환하지 않음.
+                _sqlite_logger.warning(
+                    "[sqlite] PRAGMA config failed (degraded performance): %s", _pragma_err
+                )
+            # sqlite3.DatabaseError 등 예상 밖 예외는 의도적으로 재발생 (연결 실패)
+
         self._init_db()
 
     def _init_db(self) -> None:
@@ -118,12 +127,19 @@ class SQLiteVectorStore:
             os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
         self.conn = sqlite3.connect(self.db_path)
         if self.db_path != ":memory:":
+            import logging as _logging
+            _vec_logger = _logging.getLogger("termux_aichain.memory.sqlite")
             try:
                 self.conn.execute("PRAGMA journal_mode = WAL;")
                 self.conn.execute("PRAGMA synchronous = NORMAL;")
-            except Exception:
-                pass
+                self.conn.execute("PRAGMA busy_timeout = 5000;")
+            except sqlite3.OperationalError as _pragma_err:
+                _vec_logger.warning(
+                    "[sqlite/vector] PRAGMA config failed (degraded performance): %s", _pragma_err
+                )
+            # sqlite3.DatabaseError 등 예상 밖 예외는 의도적으로 재발생
         self._init_db()
+
 
     def _init_db(self) -> None:
         with self.conn:

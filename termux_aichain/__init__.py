@@ -116,6 +116,11 @@ _LAZY_IMPORTS = {
     "transcribe_speech": ("termux_aichain.device.ecosystem", "transcribe_speech"),
     "generate_diffusion_image": ("termux_aichain.device.ecosystem", "generate_diffusion_image"),
     "browse_web_headless": ("termux_aichain.device.ecosystem", "browse_web_headless"),
+    "synthesize_speech": ("termux_aichain.device.ecosystem", "synthesize_speech"),
+    "speak_text": ("termux_aichain.device.ecosystem", "speak_text"),
+    "analyze_image_vlm": ("termux_aichain.device.ecosystem", "analyze_image_vlm"),
+    "detect_faces": ("termux_aichain.device.ecosystem", "detect_faces"),
+    "detect_edges_canny": ("termux_aichain.device.ecosystem", "detect_edges_canny"),
     "get_ecosystem_tools": ("termux_aichain.device.ecosystem", "get_ecosystem_tools"),
 }
 

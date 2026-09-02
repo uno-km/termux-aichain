@@ -137,14 +137,23 @@ class LocalServerManager:
 
     def _drain_stderr(self, proc: subprocess.Popen) -> None:
         """Asynchronously drains stderr to prevent pipe buffer deadlock."""
+        import logging as _logging
+        _drain_logger = _logging.getLogger("termux_aichain.providers.local_server")
         try:
             if proc.stderr:
                 for line in iter(proc.stderr.readline, b""):
                     if not line:
                         break
                     self.ring_log.append(line.decode("utf-8", errors="replace"))
-        except Exception:
-            pass
+        except (BrokenPipeError, ConnectionResetError, OSError) as _pipe_err:
+            # 서버 프로세스가 종료되어 파이프가 끊어짐 — 정상 종료 경로.
+            _drain_logger.debug("[local_server] stderr drain pipe closed: %s", _pipe_err)
+        # ValueError (readline on closed file) — 명시적 처리
+        except ValueError as _val_err:
+            _drain_logger.debug("[local_server] stderr drain ValueError (stream closed): %s", _val_err)
+        # 예상 밖 예외(MemoryError 등)는 의도적으로 재발생
+
+
 
     def start(self, wait_ready: bool = True, timeout: float = 30.0) -> bool:
         """Starts the server process in background and waits for health."""
@@ -170,12 +179,19 @@ class LocalServerManager:
 
     def is_healthy(self) -> bool:
         """Checks if the local server HTTP health endpoint responds 200 OK."""
+        import urllib.error, http.client
         url = f"http://{self.config.host}:{self.config.port}/health"
         try:
             with urllib.request.urlopen(url, timeout=1.0) as resp:
                 return resp.status == 200
-        except Exception:
+        except (urllib.error.URLError, urllib.error.HTTPError,
+                http.client.HTTPException, ConnectionRefusedError,
+                ConnectionResetError, TimeoutError, OSError):
+            # 서버 미준비 또는 연결 거부 — 정상 polling 경로. False 반환.
             return False
+        # MemoryError 등 예상 밖 예외는 재발생
+
+
 
     def wait_until_ready(self, timeout: float = 30.0) -> bool:
         """Polls health until the model is fully loaded into memory."""

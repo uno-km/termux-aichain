@@ -7,13 +7,19 @@ import {
   ConversationBufferMemory,
   MicroVectorStore,
   getDefaultDeviceTools,
+  getEcosystemTools,
+  synthesizeSpeech,
+  speakText,
+  analyzeImageVlm,
+  detectFaces,
+  detectEdgesCanny,
   Tracer,
   HumanMessage
 } from "../js/esm/index.js";
 
 async function main() {
   console.log("==============================================================================");
-  console.log("??@termux-ai/chain Node.js ESM Full Regression Suite");
+  console.log("[AUDIT] @termux-ai/chain Node.js ESM Full Regression Suite");
   console.log("==============================================================================");
   
   const tracer = new Tracer("NodeRegressionAudit");
@@ -56,6 +62,16 @@ async function main() {
     tracer.trace("DeviceTools", () => {
       const tools = getDefaultDeviceTools();
       if (!tools || tools.length < 4) throw new Error("Device tools mismatch");
+    });
+
+    // 6. Ecosystem Tools (STT, Diffusion, Playwright, TTS, Vision)
+    await tracer.trace("EcosystemTools", async () => {
+      const ecoTools = getEcosystemTools();
+      if (!ecoTools || ecoTools.length !== 9) throw new Error(`Ecosystem tools count mismatch: expected 9, got ${ecoTools?.length}`);
+      const ttsRes = await synthesizeSpeech.func({ text: "test" });
+      if (!ttsRes) throw new Error("TTS synthesize tool call failed");
+      const vlmRes = await analyzeImageVlm.func({ image_path: "test.png" });
+      if (!vlmRes) throw new Error("VLM analyze tool call failed");
     });
 
     tracer.finish();

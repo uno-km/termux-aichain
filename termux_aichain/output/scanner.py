@@ -112,14 +112,24 @@ def repair_json_light(raw_json: str) -> str:
     return s
 
 def try_parse_json(candidate: str) -> Tuple[Optional[Any], bool]:
-    """Attempts standard json.loads, falling back to light display repair."""
+    """Attempts standard json.loads, falling back to light display repair.
+
+    반환: (parsed_value, was_repaired)
+    파싱 실패 시: (None, False) — 예상 밖 예외(MemoryError 등)는 재발생.
+    """
     try:
         return json.loads(candidate), False
-    except Exception:
-        pass
+    except json.JSONDecodeError:
+        pass  # Allowed: try repair path below. Final failure -> (None, False).
+    except (TypeError, ValueError) as _json_err:
+        # json.loads가 str 외 타입을 받거나 surrogate 등 — 파싱 불가로 처리
+        return None, False
 
     try:
         repaired = repair_json_light(candidate)
         return json.loads(repaired), True
-    except Exception:
+    except json.JSONDecodeError:
         return None, False
+    except (TypeError, ValueError):
+        return None, False
+    # MemoryError, SystemError 등 예상 밖 예외는 의도적으로 재발생

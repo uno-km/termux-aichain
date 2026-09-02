@@ -687,6 +687,7 @@ class LocalAgent:
 
         if self.owns_identity_lock:
             if self.lock_handle:
+                _lock_errors: list = []
                 try:
                     if fcntl:
                         fcntl.flock(self.lock_handle.fileno(), fcntl.LOCK_UN)
@@ -694,15 +695,43 @@ class LocalAgent:
                         self.lock_handle.seek(0)
                         msvcrt.locking(self.lock_handle.fileno(), msvcrt.LK_UNLCK, 1)
                     self.lock_handle.close()
-                except Exception:
-                    pass
+                except OSError as _lock_err:
+                    # 잠금 해제 실패 — 파일 디스크립터가 이미 닫혔거나 플랫폼 문제.
+                    # 오류를 보존하되 종료 흐름은 계속 진행.
+                    _lock_errors.append(f"lock_release_failed: {_lock_err}")
+                    import logging as _logging
+                    _logging.getLogger("termux_aichain.agent").warning(
+                        "[agent] Lock release failed (degraded cleanup): %s", _lock_err
+                    )
+                except (AttributeError, ValueError) as _fd_err:
+                    _lock_errors.append(f"lock_fd_error: {_fd_err}")
+                    import logging as _logging
+                    _logging.getLogger("termux_aichain.agent").warning(
+                        "[agent] Lock FD error during cleanup: %s", _fd_err
+                    )
                 self.lock_handle = None
+                if _lock_errors:
+                    # degraded 상태 기록 — stopped이나 lock cleanup 미완료
+                    import logging as _logging
+                    _logging.getLogger("termux_aichain.agent").error(
+                        "[agent] Identity lock cleanup incomplete. Agent may leave stale lock. errors=%s",
+                        _lock_errors,
+                    )
 
             if self.lock_file_path and self.lock_file_path.exists():
                 try:
                     self.lock_file_path.unlink()
-                except Exception:
-                    pass
+                except (PermissionError, OSError) as _unlink_err:
+                    # 잠금 파일 삭제 실패 — 보안 cleanup 미완료.
+                    # Exit Code 0을 반환하지 않도록 호출자에게 경고를 전달해야 함.
+                    import logging as _logging
+                    _logging.getLogger("termux_aichain.agent").error(
+                        "[agent] SECURITY: Failed to remove lock file %s: %s. "
+                        "Stale lock may prevent future process launches.",
+                        self.lock_file_path, _unlink_err,
+                    )
+
+
 
         with self._lock:
             self.state = AgentState.STOPPED
@@ -949,12 +978,16 @@ class LocalAgent:
                     approval_callback=approval_callback
                 )
             except Exception:
+                import logging as _logging
+                _cleanup_logger = _logging.getLogger("termux_aichain.agent.create")
                 if proc and proc.poll() is None:
                     proc.terminate()
                     try:
                         proc.wait(timeout=2.0)
-                    except Exception:
+                    except subprocess.TimeoutExpired:
                         proc.kill()
+                    except OSError as _wait_err:
+                        _cleanup_logger.warning("[agent.create] proc.wait failed: %s", _wait_err)
                 if lock_handle:
                     try:
                         if fcntl:
@@ -963,14 +996,19 @@ class LocalAgent:
                             lock_handle.seek(0)
                             msvcrt.locking(lock_handle.fileno(), msvcrt.LK_UNLCK, 1)
                         lock_handle.close()
-                    except Exception:
-                        pass
+                    except (OSError, AttributeError, ValueError) as _lock_err:
+                        _cleanup_logger.warning("[agent.create] Lock cleanup failed: %s", _lock_err)
                 if lock_file.exists():
                     try:
                         lock_file.unlink()
-                    except Exception:
-                        pass
-                raise
+                    except (PermissionError, OSError) as _unlink_err:
+                        _cleanup_logger.error(
+                            "[agent.create] SECURITY: Failed to remove lock file %s: %s",
+                            lock_file, _unlink_err,
+                        )
+                raise  # 원래 예외를 반드시 재발생 — 성공으로 변환 금지
+
+
 
         # ======================================================================
         # Mode 3: EMBEDDED
