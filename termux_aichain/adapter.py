@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from typing import Any, AsyncIterator
 
+from ameva_component.exceptions import OperationNotSupported
 
 class AIChainOrchestratorAdapter:
     """AIChain Orchestrator Adapter.
@@ -102,10 +103,13 @@ class AIChainOrchestratorAdapter:
 
     async def infer(self, request: dict[str, Any]) -> AsyncIterator[dict[str, Any]]:
         """termux-aichain은 체이닝 프레임워크입니다.
-        직접 streaming inference는 OPERATION_NOT_SUPPORTED.
+        직접 streaming inference는 미지원 — OperationNotSupported를 발생시킵니다.
         LocalAgent.run()을 직접 호출하십시오.
+
+        P0-2: yield 방식은 상위 소비자가 Frame을 정상으로 처리할 위험이 있어 raise로 변경.
         """
-        yield self._not_supported("infer")
+        raise OperationNotSupported(operation="infer", component_id=self.COMPONENT_ID)
+        yield  # type: ignore[misc]
 
     # ── 내부 유틸리티 ──
 
