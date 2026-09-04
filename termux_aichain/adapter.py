@@ -51,11 +51,13 @@ class AIChainOrchestratorAdapter:
         """경량 진단 — 패키지 import 가능 여부 확인."""
         try:
             import termux_aichain  # noqa: F401
+            import os
             return {
                 "ok": True,
                 "ready": True,
                 "degraded": False,
                 "component_id": self.COMPONENT_ID,
+                "process": {"running": True, "pid": os.getpid(), "verified": True},
                 "checks": {"import": "ok"},
             }
         except Exception as exc:
@@ -64,6 +66,7 @@ class AIChainOrchestratorAdapter:
                 "ready": False,
                 "degraded": True,
                 "component_id": self.COMPONENT_ID,
+                "process": {"running": False, "pid": None, "verified": False, "inspection_error": {"code": "IMPORT_FAILED", "message": str(exc)}},
                 "checks": {"import": f"failed: {exc}"},
             }
 
@@ -131,7 +134,7 @@ class AIChainOrchestratorAdapter:
         try:
             from termux_aichain import __version__
             return __version__
-        except Exception:
+        except (ImportError, AttributeError):
             return "1.1.1"
 
 
