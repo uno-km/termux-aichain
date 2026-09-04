@@ -61,13 +61,24 @@ class AIChainOrchestratorAdapter:
                 "checks": {"import": "ok"},
             }
         except Exception as exc:
+            import logging
+            logging.getLogger(__name__).exception("Failed to import termux_aichain: %s", exc)
             return {
                 "ok": False,
                 "ready": False,
                 "degraded": True,
                 "component_id": self.COMPONENT_ID,
-                "process": {"running": False, "pid": None, "verified": False, "inspection_error": {"code": "IMPORT_FAILED", "message": str(exc)}},
-                "checks": {"import": f"failed: {exc}"},
+                "process": {
+                    "running": False,
+                    "pid": None,
+                    "verified": False,
+                    "inspection_error": {
+                        "code": "IMPORT_FAILED",
+                        "message": "Component runtime dependency could not be loaded",
+                        "cause_type": type(exc).__name__,
+                    },
+                },
+                "checks": {"import": "failed"},
             }
 
     def models(self) -> dict[str, Any]:

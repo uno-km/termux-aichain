@@ -204,8 +204,11 @@ class SQLiteVectorStore:
                             "INSERT INTO fts_documents (doc_id, content) VALUES (?, ?)",
                             (str(row_id), text)
                         )
-                    except Exception:
-                        pass
+                    except sqlite3.Error as fts_err:
+                        import logging
+                        logging.getLogger("termux_aichain.memory.sqlite").warning(
+                            "[sqlite/vector] Failed to insert FTS document %s: %s", row_id, fts_err
+                        )
         return inserted_ids
 
     def add_documents(self, documents: List[Document]) -> List[int]:
@@ -359,8 +362,11 @@ class SQLiteVectorStore:
             if self._fts5_supported:
                 try:
                     self.conn.execute("DELETE FROM fts_documents")
-                except Exception:
-                    pass
+                except sqlite3.Error as fts_err:
+                    import logging
+                    logging.getLogger("termux_aichain.memory.sqlite").warning(
+                        "[sqlite/vector] Failed to clear FTS documents: %s", fts_err
+                    )
 
     def close(self) -> None:
         self.conn.close()

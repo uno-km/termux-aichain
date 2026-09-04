@@ -50,7 +50,7 @@ def get_git_output(args: List[str]) -> str:
             check=True
         )
         return res.stdout.strip()
-    except Exception as ex:
+    except (subprocess.SubprocessError, OSError) as ex:
         return f"git error: {str(ex)}"
 
 def compute_file_sha256(filepath: Path) -> str:
@@ -119,14 +119,20 @@ def run_tests_and_collect_evidence() -> Dict[str, any]:
     node_reported_ms = node_duration_ms
     for line in node_res.stdout.splitlines():
         if "ℹ pass " in line:
-            try: node_passed = int(line.split("ℹ pass ")[1].strip())
-            except: pass
+            try:
+                node_passed = int(line.split("ℹ pass ")[1].strip())
+            except (ValueError, IndexError) as err:
+                print(f"    [!] Warning parsing node pass count: {err}")
         if "ℹ tests " in line:
-            try: node_total = int(line.split("ℹ tests ")[1].strip())
-            except: pass
+            try:
+                node_total = int(line.split("ℹ tests ")[1].strip())
+            except (ValueError, IndexError) as err:
+                print(f"    [!] Warning parsing node total count: {err}")
         if "ℹ duration_ms " in line:
-            try: node_reported_ms = float(line.split("ℹ duration_ms ")[1].strip())
-            except: pass
+            try:
+                node_reported_ms = float(line.split("ℹ duration_ms ")[1].strip())
+            except (ValueError, IndexError) as err:
+                print(f"    [!] Warning parsing node duration: {err}")
 
     head_commit = get_git_output(["rev-parse", "HEAD"])
     head_tree = get_git_output(["rev-parse", "HEAD^{tree}"])
@@ -160,6 +166,119 @@ def run_tests_and_collect_evidence() -> Dict[str, any]:
     (artifacts_dir / "verification-subject.json").write_text(json.dumps(evidence, indent=2), encoding="utf-8")
     return evidence
 
+def scan_source_manifest(
+    tracked_files: List[str],
+    repo_root: Path,
+) -> Tuple[List[Dict[str, any]], List[Dict[str, any]], Dict[str, any]]:
+    """모든 추적 대상 파일의 무결성을 전수 스캔하며, 오류 발생 시 침묵하지 않고 구조화하여 누적합니다."""
+    manifest_entries: List[Dict[str, any]] = []
+    source_entries: List[Dict[str, any]] = []
+    failures: List[Dict[str, any]] = []
+
+    for rel_path in tracked_files:
+        norm_path = rel_path.replace("\\", "/")
+        full_path = repo_root / rel_path
+
+        # 1. 실존 여부 및 정규 파일 검사
+        try:
+            if not full_path.exists():
+                failures.append({
+                    "path": norm_path,
+                    "operation": "check_existence",
+                    "error": {
+                        "code": "AUDIT_FILE_NOT_FOUND",
+                        "cause_type": "FileNotFoundError",
+                        "message": f"File does not exist: {norm_path}",
+                    },
+                })
+                continue
+            if not full_path.is_file():
+                failures.append({
+                    "path": norm_path,
+                    "operation": "check_type",
+                    "error": {
+                        "code": "AUDIT_NOT_A_REGULAR_FILE",
+                        "cause_type": "ValueError",
+                        "message": f"Path is not a regular file: {norm_path}",
+                    },
+                })
+                continue
+            stat_res = full_path.stat()
+            file_size = stat_res.st_size
+        except (OSError, ValueError) as err:
+            failures.append({
+                "path": norm_path,
+                "operation": "stat_file",
+                "error": {
+                    "code": "AUDIT_FILE_STAT_FAILED",
+                    "cause_type": type(err).__name__,
+                    "message": str(err),
+                },
+            })
+            continue
+
+        # 2. SHA-256 체크섬 계산
+        try:
+            file_sha = compute_file_sha256(full_path)
+        except (OSError, ValueError) as err:
+            failures.append({
+                "path": norm_path,
+                "operation": "compute_sha256",
+                "error": {
+                    "code": "AUDIT_HASH_COMPUTE_FAILED",
+                    "cause_type": type(err).__name__,
+                    "message": str(err),
+                },
+            })
+            continue
+
+        ext = full_path.suffix.lower()
+        is_binary = ext in BINARY_EXTENSIONS
+
+        manifest_entries.append({
+            "path": norm_path,
+            "size": file_size,
+            "sha256": file_sha,
+            "is_binary": is_binary,
+        })
+
+        # 3. 소스 코드 본문 추출 (텍스트 파일)
+        if not is_binary:
+            try:
+                content = full_path.read_text(encoding="utf-8")
+                lines_count = len(content.splitlines())
+                source_entries.append({
+                    "path": norm_path,
+                    "size": file_size,
+                    "sha256": file_sha,
+                    "lines": lines_count,
+                    "content": content,
+                    "ext": ext.lstrip(".") or "text",
+                })
+            except (OSError, UnicodeDecodeError) as err:
+                failures.append({
+                    "path": norm_path,
+                    "operation": "read_source",
+                    "error": {
+                        "code": "AUDIT_SOURCE_READ_FAILED",
+                        "cause_type": type(err).__name__,
+                        "message": str(err),
+                    },
+                })
+
+    scanned_files = len(tracked_files)
+    failed_files = len(failures)
+    audit_complete = (failed_files == 0)
+
+    audit_summary = {
+        "audit_complete": audit_complete,
+        "scanned_files": scanned_files,
+        "failed_files": failed_files,
+        "failures": failures,
+    }
+    return manifest_entries, source_entries, audit_summary
+
+
 def generate_report():
     print("[*] Compiling Master Audit Report...")
     evidence = run_tests_and_collect_evidence()
@@ -169,40 +288,11 @@ def generate_report():
     tracked_files = [f.strip() for f in raw_files if f.strip() and f.strip().replace("\\", "/") not in EXCLUDED_FROM_SOURCE_MANIFEST]
     tracked_files.sort()
 
-    manifest_entries: List[Dict[str, any]] = []
-    source_entries: List[Dict[str, any]] = []
+    manifest_entries, source_entries, audit_summary = scan_source_manifest(tracked_files, REPO_ROOT)
+    audit_summary["audit_complete"] = audit_summary["audit_complete"] and (evidence.get("observed_failures", 0) == 0)
 
-    for rel_path in tracked_files:
-        full_path = REPO_ROOT / rel_path
-        if not full_path.exists() or not full_path.is_file():
-            continue
-
-        file_size = full_path.stat().st_size
-        file_sha = compute_file_sha256(full_path)
-        ext = full_path.suffix.lower()
-        is_binary = ext in BINARY_EXTENSIONS
-
-        manifest_entries.append({
-            "path": rel_path.replace("\\", "/"),
-            "size": file_size,
-            "sha256": file_sha,
-            "is_binary": is_binary
-        })
-
-        if not is_binary:
-            try:
-                content = full_path.read_text(encoding="utf-8")
-                lines_count = len(content.splitlines())
-                source_entries.append({
-                    "path": rel_path.replace("\\", "/"),
-                    "size": file_size,
-                    "sha256": file_sha,
-                    "lines": lines_count,
-                    "content": content,
-                    "ext": ext.lstrip(".") or "text"
-                })
-            except Exception:
-                pass
+    artifacts_dir = REPO_ROOT / "artifacts"
+    (artifacts_dir / "audit-summary.json").write_text(json.dumps(audit_summary, indent=2), encoding="utf-8")
 
     doc_lines: List[str] = []
     doc_lines.append("# termux-aichain Master Audit & Full Source Code Report")
@@ -224,9 +314,18 @@ def generate_report():
     doc_lines.append(f"| **Extracted Source Code Files** | `{len(source_entries)}` text files |")
     doc_lines.append(f"| **Audit Verification Date** | `{evidence['timestamp_utc']}` |")
     doc_lines.append("")
-    doc_lines.append("> [!NOTE]")
-    doc_lines.append("> **Formal Audit Status: Release Candidate (RC)**")
-    doc_lines.append("> 153/153 automated tests passed with zero observed failures or errors in the verified test scope.")
+    if audit_summary["audit_complete"]:
+        doc_lines.append("> [!NOTE]")
+        doc_lines.append("> **Formal Audit Status: Release Candidate (RC) - Complete**")
+        doc_lines.append(f"> 153/153 automated tests passed with zero observed failures or errors in the verified test scope.")
+        doc_lines.append(f"> 100% of tracked source files verified ({len(manifest_entries)} manifest entries, {len(source_entries)} extracted text files, 0 failures).")
+    else:
+        doc_lines.append("> [!WARNING]")
+        doc_lines.append(f"> **Formal Audit Status: INCOMPLETE ({audit_summary['failed_files']} scan failure(s) detected)**")
+        doc_lines.append(f"> Scanned files: {audit_summary['scanned_files']}, Failed files: {audit_summary['failed_files']}")
+        doc_lines.append("> The following files failed validation during audit compilation:")
+        for f in audit_summary["failures"]:
+            doc_lines.append(f"> - `{f['path']}` ({f['operation']}): {f['error']['code']} - {f['error']['message']}")
     doc_lines.append("> The source manifest covers all Git-tracked files at Source Commit Tested, excluding generated audit reports and evidence artifacts to prevent recursive self-hashing.")
     doc_lines.append("")
     doc_lines.append("---")
@@ -297,7 +396,10 @@ def generate_report():
     report_text = "\n".join(doc_lines)
     report_path.write_text(report_text, encoding="utf-8")
     print(f"[+] Master Audit Report written to {report_path} ({len(report_text):,} bytes)")
-    return report_path
+    return report_path, audit_summary
 
 if __name__ == "__main__":
-    generate_report()
+    _, summary = generate_report()
+    if not summary.get("audit_complete", False):
+        print(f"[-] Audit failed to complete: {summary.get('failed_files', 0)} file scan failure(s).")
+        sys.exit(1)
