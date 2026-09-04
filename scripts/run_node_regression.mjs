@@ -6,6 +6,7 @@ import {
   END,
   ConversationBufferMemory,
   MicroVectorStore,
+  SparseBM25Embeddings,
   getDefaultDeviceTools,
   getEcosystemTools,
   synthesizeSpeech,
@@ -51,11 +52,14 @@ async function main() {
     });
 
     // 4. Memory & Vector Store
-    tracer.trace("MemoryVector", () => {
-      const vstore = new MicroVectorStore();
-      vstore.addTexts(["Mobile AI", "Cloud AI"], [[1.0, 0.0], [0.0, 1.0]]);
-      const matches = vstore.similaritySearchByVector([0.9, 0.1], 1);
-      if (matches[0].content !== "Mobile AI") throw new Error("Vector search error");
+    await tracer.trace("MemoryVector", async () => {
+      const embedder = new SparseBM25Embeddings(64);
+      const vstore = new MicroVectorStore({ embeddings: embedder });
+      await vstore.addTexts(["Mobile Edge AI Termux", "Cloud Large Neural Model"]);
+      const matches = await vstore.similaritySearch("Termux AI", 1);
+      if (!matches[0].content.includes("Termux")) throw new Error("Vector search error");
+      const hybridMatches = await vstore.hybridSearch("Edge Mobile", 1);
+      if (!hybridMatches[0].content.includes("Mobile")) throw new Error("Hybrid search error");
     });
 
     // 5. Device Tools

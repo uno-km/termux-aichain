@@ -93,6 +93,9 @@ _LAZY_IMPORTS = {
     "SQLiteEntityMemory": ("termux_aichain.memory.sqlite", "SQLiteEntityMemory"),
     "SQLiteVectorStore": ("termux_aichain.memory.sqlite", "SQLiteVectorStore"),
     "FactExtractor": ("termux_aichain.memory.extractor", "FactExtractor"),
+    "BaseEmbeddings": ("termux_aichain.memory.embeddings", "BaseEmbeddings"),
+    "LocalEmbeddings": ("termux_aichain.memory.embeddings", "LocalEmbeddings"),
+    "SparseBM25Embeddings": ("termux_aichain.memory.embeddings", "SparseBM25Embeddings"),
     # Serve
     "AgentServer": ("termux_aichain.serve.server", "AgentServer"),
     "serve": ("termux_aichain.serve.server", "serve"),

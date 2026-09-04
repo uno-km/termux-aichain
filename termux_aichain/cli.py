@@ -40,6 +40,12 @@ MODELS_REGISTRY = {
         "filename": "bitnet_b1_58-3B-Q4_K_M.gguf",
         "size_desc": "~1.8 GB",
         "sha256": "099a531e2ecf57e51dfadcf9779dfcf38760085a21e4ea47535b6a782b6be070"
+    },
+    "bge-micro": {
+        "url": "https://huggingface.co/CompendiumLabs/bge-micro-v2-gguf/resolve/main/bge-micro-v2-q4_k_m.gguf",
+        "filename": "bge-micro-v2-q4_k_m.gguf",
+        "size_desc": "~28 MB",
+        "sha256": "47a3e6f9d2a6dbca142e057863eebe665e7ce2913e64ca6e9ebdc5ef6951bdf8"
     }
 }
 

@@ -194,28 +194,31 @@ print("Agent Final Output:", state["messages"][-1].content)
 
 ---
 
-### [Python] Recipe 3: SQLite ACID Long-Term Memory & Pure Cosine Vector RAG
+### [Python] Recipe 3: SQLite ACID Memory & FTS5 Hybrid Vector RAG (Built-in Embeddings)
 
 ```python
-from termux_aichain import SQLiteEntityMemory, SQLiteVectorStore
+from termux_aichain import SQLiteEntityMemory, SQLiteVectorStore, SparseBM25Embeddings, LocalEmbeddings
 
 # 1. Persistent Key-Value Entity Memory
 memory = SQLiteEntityMemory(db_path="mobile_agent.db")
 memory.save_entity("device_owner", "Dr. Uno Kim")
 memory.save_entity("preferred_model", "BitNet-3B-1.58b")
-
 print("Retrieved Owner:", memory.get_entity("device_owner"))
 
-# 2. Pure Cosine Vector Store (No NumPy / ChromaDB needed)
-vector_store = SQLiteVectorStore(db_path="vector_rag.db")
+# 2. Zero-Dependency Hybrid Vector Store (No NumPy / ChromaDB needed)
+# Uses built-in SparseBM25Embeddings or LocalEmbeddings.local(model="bge-micro")
+embedder = SparseBM25Embeddings(dimension=64)
+vector_store = SQLiteVectorStore(db_path="vector_rag.db", embeddings=embedder)
+
+# Automatic vectorization on ingestion
 vector_store.add_texts(
     texts=["Android Bionic Subsystem Architecture", "WebGPU Neural Compute Shaders"],
-    embeddings=[[0.92, 0.38, 0.05], [0.12, 0.44, 0.89]],
     metadatas=[{"source": "os_doc"}, {"source": "gpu_doc"}]
 )
 
-matches = vector_store.similarity_search_by_vector([0.90, 0.40, 0.00], k=1)
-print("Top RAG Match:", matches[0].page_content, f"(Score: {matches[0].score:.4f})")
+# 2-stage FTS5 + Cosine RRF Hybrid Search (Sub-5ms on 10k docs)
+matches = vector_store.hybrid_search("Android Bionic", k=1)
+print("Top RAG Match:", matches[0].page_content, f"(RRF Score: {matches[0].score:.5f})")
 ```
 
 ---

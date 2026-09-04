@@ -43,3 +43,7 @@ pythonpath = ["."]
 testpaths = ["tests"]
 [project.scripts]
 termux-aichain = "termux_aichain.cli:main"
+
+[project.entry-points."ameva.components"]
+termux-aichain = "termux_aichain.adapter:create_adapter"
+
