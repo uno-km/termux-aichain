@@ -1,11 +1,11 @@
-[build-system]
+﻿[build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "termux-aichain"
-version = "1.1.1"
-description = "Sovereign Zero-Dependency AI Chaining and Multimodal Autonomous Agent Framework for Android Edge and Termux"
+version = "1.1.2"
+description = "Zero-dependency AI chaining and autonomous agent framework utilizing device resources for Android Termux & Edge"
 readme = "README.md"
 authors = [{ name = "UnoKim", email = "uno-km@users.noreply.github.com" }]
 license = { text = "Apache-2.0" }
@@ -27,6 +27,7 @@ keywords = ["termux", "android", "edge-ai", "langchain", "llama-cpp", "bitnet", 
 requires-python = ">=3.10"
 dependencies = [
     "ameva-vulkan-runtime>=1.0.0",
+    "ameva-component-sdk>=0.1.0,<2.0",
 ]
 
 [project.urls]

@@ -1,7 +1,7 @@
 {
   "name": "termux-aichain",
-  "version": "1.1.1",
-  "description": "Sovereign zero-dependency AI chaining and multimodal autonomous agent framework for Node.js ESM and Android Termux.",
+  "version": "1.1.2",
+  "description": "Zero-dependency AI chaining and autonomous agent framework utilizing device resources for Node.js ESM and Android Termux",
   "type": "module",
   "main": "js/esm/index.js",
   "module": "js/esm/index.js",
