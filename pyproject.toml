@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "termux-aichain"
-version = "1.1.2"
+version = "1.1.3"
 description = "Zero-dependency AI chaining and autonomous agent framework utilizing device resources for Android Termux & Edge"
 readme = "README.md"
 authors = [{ name = "UnoKim", email = "uno-km@users.noreply.github.com" }]
