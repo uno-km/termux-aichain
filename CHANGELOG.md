@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.4] - 2026-09-05
+
+### Changed
+- Synchronized unified orchestration dependencies and ecosystem service telemetry.
+- Validated full-stack zero-regression test suite compatibility.
+
+---
+
 ## [1.1.3] - 2026-09-05
 
 ### Changed

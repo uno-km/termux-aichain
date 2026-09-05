@@ -10,7 +10,7 @@ from __future__ import annotations
 import importlib
 from typing import Any
 
-__version__ = "1.1.3"
+__version__ = "1.1.4"
 __author__ = "UnoKim <uno-km@users.noreply.github.com>"
 
 _LAZY_IMPORTS = {
