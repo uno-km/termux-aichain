@@ -483,9 +483,12 @@ class LocalAgent:
                 tools=tools or [],
                 system_prompt=system_prompt
             )
-        except ServerConnectionRefusedError:
-            # Server is not running -> Proceed to managed daemon spawn
-            pass
+        except ServerConnectionRefusedError as _probe_err:
+            # Server is not running -> Log probe status and proceed to managed daemon spawn
+            import logging as _logging
+            _logging.getLogger("termux_aichain.agent.auto").debug(
+                "Probe to %s failed (%s); proceeding to managed daemon spawn.", endpoint, _probe_err
+            )
         except (ServerProtocolMismatchError, ModelIdentityMismatchError) as exc:
             raise DuplicateServerOwnershipError(
                 f"Existing server at {endpoint} conflicts with requested model '{expected_id}': {str(exc)}"

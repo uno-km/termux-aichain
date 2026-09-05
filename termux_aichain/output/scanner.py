@@ -119,10 +119,11 @@ def try_parse_json(candidate: str) -> Tuple[Optional[Any], bool]:
     """
     try:
         return json.loads(candidate), False
-    except json.JSONDecodeError:
-        pass  # Allowed: try repair path below. Final failure -> (None, False).
+    except json.JSONDecodeError as _decode_err:
+        _ = _decode_err  # Allowed: try repair path below. Final failure -> (None, False).
     except (TypeError, ValueError) as _json_err:
         # json.loads가 str 외 타입을 받거나 surrogate 등 — 파싱 불가로 처리
+        _ = _json_err
         return None, False
 
     try:

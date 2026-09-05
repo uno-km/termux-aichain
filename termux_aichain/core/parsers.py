@@ -57,6 +57,7 @@ class JsonOutputParser(BaseOutputParser):
 
     def parse(self, text: str) -> Any:
         cleaned = text.strip()
+        parsing_errors = []
 
         # 1. Try markdown code block match
         match = _JSON_BLOCK_REGEX.search(cleaned)
@@ -64,14 +65,14 @@ class JsonOutputParser(BaseOutputParser):
             target_str = match.group(1).strip()
             try:
                 return json.loads(target_str)
-            except json.JSONDecodeError:
-                pass  # Allowed: next strategy follows. Final failure re-raises at L99.
+            except json.JSONDecodeError as err:
+                parsing_errors.append(f"markdown_code_block: {err}")
 
         # 2. Try direct full-text JSON load
         try:
             return json.loads(cleaned)
-        except json.JSONDecodeError:
-            pass  # Allowed: next strategy follows.
+        except json.JSONDecodeError as err:
+            parsing_errors.append(f"direct_json: {err}")
 
         # 3. Try to locate outermost {...} or [...]
         start_obj = cleaned.find("{")
@@ -83,20 +84,21 @@ class JsonOutputParser(BaseOutputParser):
             candidate = cleaned[start_obj:end_obj + 1]
             try:
                 return json.loads(candidate)
-            except json.JSONDecodeError:
-                pass  # Allowed: next strategy follows.
+            except json.JSONDecodeError as err:
+                parsing_errors.append(f"outermost_object: {err}")
 
         if start_arr != -1 and end_arr != -1 and end_arr > start_arr:
             candidate = cleaned[start_arr:end_arr + 1]
             try:
                 return json.loads(candidate)
-            except json.JSONDecodeError:
-                pass  # Allowed: final strategy. ValueError raised below if all fail.
+            except json.JSONDecodeError as err:
+                parsing_errors.append(f"outermost_array: {err}")
 
         if self.default_factory is not None:
             return self.default_factory() if callable(self.default_factory) else self.default_factory
 
-        raise ValueError(f"Failed to parse JSON from generation output:\n{text}")
+        err_details = "; ".join(parsing_errors) if parsing_errors else "no valid JSON structures detected"
+        raise ValueError(f"Failed to parse JSON from generation output (attempted strategies failed: {err_details}):\n{text}")
 
 
 

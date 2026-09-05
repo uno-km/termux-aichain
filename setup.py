@@ -12,7 +12,7 @@ setup(
     packages=find_packages(),
     python_requires=">=3.10",
     install_requires=[
-        "ameva-vulkan-runtime>=1.0.0",
+        "ameva-runtime>=2.0.0",
     ],
     classifiers=[
         "License :: OSI Approved :: Apache Software License",

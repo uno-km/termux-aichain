@@ -1,4 +1,4 @@
-﻿"""
+"""
 Unit tests for termux_aichain.core.prompt
 """
 import pytest
